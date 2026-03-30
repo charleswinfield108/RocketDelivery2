@@ -51,6 +51,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth").permitAll()
                 .requestMatchers("/api/address").permitAll()
+                .requestMatchers("/api/orders").permitAll()
+                .requestMatchers("/api/order/**").permitAll()
                 .requestMatchers("/backoffice/**").permitAll()
                 .anyRequest().authenticated()
             )
