@@ -2,23 +2,21 @@
 
 A robust backend application for managing food delivery operations, including restaurants, products, orders, customers, couriers, and their respective statuses. This system provides a complete API for handling restaurant management, order processing, and delivery tracking.
 
-## � Table of Contents
+## 📑 Table of Contents
 
-- [Tech Stack](#️-tech-stack)
+- [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
 - [Installation & Setup Instructions](#-installation--setup-instructions)
-- [Environment Variables](#️-environment-variables)
+- [Environment Variables](#-environment-variables)
 - [API Documentation](#-api-documentation)
 - [Author](#-author)
 - [License](#-license)
 - [Additional Notes](#-additional-notes)
 
-## �🛠️ Tech Stack
+## 🛠️ Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
-[⬆ Back to Table of Contents](#-table-of-contents)
-
 | **Language** | Java 21 |
 | **Framework** | Spring Boot 3.5.13 |
 | **Build Tool** | Maven |
@@ -29,6 +27,8 @@ A robust backend application for managing food delivery operations, including re
 | **Code Generation** | Lombok |
 | **Validation** | Spring Validation |
 | **Testing** | JUnit & Spring Boot Test |
+
+[⬆ Back to Table of Contents](#-table-of-contents)
 
 ## 📁 Project Structure
 
@@ -89,9 +89,9 @@ rdelivery-template-m12/
 │       └── java/com/rocketFoodDelivery/rocketFood/  # Test classes
 ├── pom.xml                              # Maven configuration
 └── README.md                            # This file
-[⬆ Back to Table of Contents](#-table-of-contents)
-
 ```
+
+[⬆ Back to Table of Contents](#-table-of-contents)
 
 ## 📋 Installation & Setup Instructions
 
