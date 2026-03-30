@@ -38,4 +38,13 @@ public class GlobalExceptionHandler {
         response.setDetails(ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ResponseEntity<ApiErrorDTO> handleUnauthorizedException(UnauthorizedException ex) {
+        ApiErrorDTO response = new ApiErrorDTO();
+        response.setError("Unauthorized");
+        response.setDetails(ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
 }
