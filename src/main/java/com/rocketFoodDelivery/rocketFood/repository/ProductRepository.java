@@ -20,14 +20,17 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     List<Product> findByRestaurantId(int restaurantId);
 
     @Query(nativeQuery = true, value = """
-        // todo: Write SQL query here
+        SELECT p.id, p.restaurant_id, p.name, p.description, p.cost
+        FROM products p
+        WHERE p.restaurant_id = ?1
+        ORDER BY p.id ASC
     """)
     List<Product> findProductsByRestaurantId(@Param("restaurantId") int restaurantId);
 
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        // todo: Write SQL query here
+        DELETE FROM products WHERE restaurant_id = ?1
     """)
-    void deleteProductsByRestaurantId(@Param("restaurantId") int restaurantId);
+    int deleteProductsByRestaurantId(@Param("restaurantId") int restaurantId);
 }
