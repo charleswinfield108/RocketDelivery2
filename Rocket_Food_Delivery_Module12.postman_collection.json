@@ -1,0 +1,981 @@
+{
+  "info": {
+    "_postman_id": "rocket-food-delivery-m12",
+    "name": "Rocket Food Delivery - Module 12",
+    "description": "Complete API collection for Rocket Food Delivery Module 12 endpoints\n\n## Authentication\nUse the POST /api/auth endpoint to get an access token. The token will be automatically stored and used for all authenticated requests.\n\n## Base URL\nSet the `base_url` variable to your API server (default: http://localhost:8080)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Login - Get Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.accessToken) {",
+                  "        pm.environment.set(\"accessToken\", jsonData.accessToken);",
+                  "        pm.test(\"✅ Token saved to environment\", function() {",
+                  "            pm.expect(jsonData.accessToken).to.exist;",
+                  "        });",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@codeboxx.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth"
+              ]
+            },
+            "description": "Authenticate user with email and password. Returns access token for subsequent requests."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"john.doe@codeboxx.com\",\n  \"password\": \"password\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/auth",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "auth"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZXMiOlsiUk9MRV9DVVNUT0VSIl0sImlhdCI6MTcxMzEzOTA5NywiZXhwIjoxNzEzMjI1NDk3fQ.token_string_here\"\n}\n"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"wrong@example.com\",\n  \"password\": \"wrongpassword\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/auth",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "auth"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false\n}\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🏪 Restaurants",
+      "item": [
+        {
+          "name": "List All Restaurants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ]
+            },
+            "description": "Get all restaurants without filters"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/restaurants",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "restaurants"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Villa Wellington\",\n    \"price_range\": 3,\n    \"rating\": 4\n  },\n  {\n    \"id\": 2,\n    \"name\": \"Fast Pub\",\n    \"price_range\": 2,\n    \"rating\": 3\n  }\n]\n"
+            }
+          ]
+        },
+        {
+          "name": "List Restaurants - Filter by Rating",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants?rating=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ],
+              "query": [
+                {
+                  "key": "rating",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Get restaurants filtered by rating (1-5)"
+          }
+        },
+        {
+          "name": "List Restaurants - Filter by Price Range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants?price_range=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ],
+              "query": [
+                {
+                  "key": "price_range",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get restaurants filtered by price_range (1-3)"
+          }
+        },
+        {
+          "name": "List Restaurants - Filter by Rating & Price Range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants?rating=4&price_range=2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ],
+              "query": [
+                {
+                  "key": "rating",
+                  "value": "4"
+                },
+                {
+                  "key": "price_range",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "Get restaurants filtered by both rating and price_range"
+          }
+        },
+        {
+          "name": "Get Restaurant by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "1"
+              ]
+            },
+            "description": "Get details for a specific restaurant by ID"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/restaurants/1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "restaurants",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Villa Wellington\",\n  \"price_range\": 3,\n  \"rating\": 4\n}\n"
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/restaurants/999",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "restaurants",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Resource not found\",\n  \"details\": \"Restaurant with id 999 not found\"\n}\n"
+            }
+          ]
+        },
+        {
+          "name": "Create Restaurant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 2,\n  \"name\": \"Villa Wellington\",\n  \"phone\": \"15141234567\",\n  \"email\": \"villa@wellington.com\",\n  \"price_range\": 2,\n  \"address\": {\n    \"street_address\": \"123 Wellington St.\",\n    \"city\": \"Montreal\",\n    \"postal_code\": \"H3G264\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/restaurants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "restaurants"
+              ]
+            },
+            "description": "Create a new restaurant with address information"
+          },
+          "response": [
+            {
+              "name": "Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": 2,\n  \"name\": \"Villa Wellington\",\n  \"phone\": \"15141234567\",\n  \"email\": \"villa@wellington.com\",\n  \"price_range\": 2,\n  \"address\": {\n    \"street_address\": \"123 Wellington St.\",\n    \"city\": \"Montreal\",\n    \"postal_code\": \"H3G264\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/restaurants",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "restaurants"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 9,\n    \"name\": \"Villa Wellington\",\n    \"phone\": \"15141234567\",\n    \"email\": \"villa@wellington.com\",\n    \"user_id\": 2,\n    \"price_range\": 2,\n    \"address\": {\n      \"id\": 21,\n      \"street_address\": \"123 Wellington St.\",\n      \"city\": \"Montreal\",\n      \"postal_code\": \"H3G264\"\n    }\n  }\n}\n"
+            }
+          ]
+        },
+        {
+          "name": "Update Restaurant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"B12 Nation\",\n  \"price_range\": 3,\n  \"phone\": \"2223334444\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/restaurants/9",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "9"
+              ]
+            },
+            "description": "Update restaurant details (name, price_range, phone only)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"B12 Nation\",\n  \"price_range\": 3,\n  \"phone\": \"2223334444\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/restaurants/9",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "restaurants",
+                    "9"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 9,\n    \"name\": \"B12 Nation\",\n    \"phone\": \"2223334444\",\n    \"email\": \"villa@wellington.com\",\n    \"address\": {\n      \"id\": 21,\n      \"city\": \"Montreal\",\n      \"street_address\": \"123 Wellington St.\",\n      \"postal_code\": \"H3G264\"\n    },\n    \"user_id\": 3,\n    \"price_range\": 3\n  }\n}\n"
+            }
+          ]
+        },
+        {
+          "name": "Delete Restaurant",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants/9",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "restaurants",
+                "9"
+              ]
+            },
+            "description": "Delete a restaurant by ID"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/restaurants/1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "restaurants",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Don Mole\",\n    \"price_range\": 2,\n    \"rating\": 4\n  }\n}\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🍔 Products",
+      "item": [
+        {
+          "name": "Get Products by Restaurant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products?restaurant=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "restaurant",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get all products for a specific restaurant (restaurant_id required)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/products?restaurant=1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "restaurant",
+                      "value": "1"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Cheeseburger\",\n    \"cost\": 525\n  },\n  {\n    \"id\": 2,\n    \"name\": \"French Fries\",\n    \"cost\": 250\n  },\n  {\n    \"id\": 3,\n    \"name\": \"Milkshake\",\n    \"cost\": 350\n  }\n]\n"
+            },
+            {
+              "name": "Empty Products",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/products?restaurant=7",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "restaurant",
+                      "value": "7"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[]\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📦 Orders",
+      "item": [
+        {
+          "name": "Get Orders by Customer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders?type=customer&id=7",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "customer"
+                },
+                {
+                  "key": "id",
+                  "value": "7"
+                }
+              ]
+            },
+            "description": "Get all orders for a specific customer"
+          }
+        },
+        {
+          "name": "Get Orders by Restaurant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders?type=restaurant&id=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "restaurant"
+                },
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get all orders for a specific restaurant"
+          }
+        },
+        {
+          "name": "Get Orders by Courier",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders?type=courier&id=3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "courier"
+                },
+                {
+                  "key": "id",
+                  "value": "3"
+                }
+              ]
+            },
+            "description": "Get all orders assigned to a specific courier"
+          },
+          "response": [
+            {
+              "name": "Success - Orders with Products",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/orders?type=customer&id=5",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "orders"
+                  ],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "customer"
+                    },
+                    {
+                      "key": "id",
+                      "value": "5"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": 3,\n    \"customer_id\": 5,\n    \"customer_name\": \"Cathy Spinka\",\n    \"customer_address\": \"7757 Darwin Causeway, Gerlachfort, 19822\",\n    \"restaurant_id\": 1,\n    \"restaurant_name\": \"Fast Pub\",\n    \"restaurant_address\": \"5398 Quigley Harbor, North Lynelle, 60808\",\n    \"courier_id\": 3,\n    \"courier_name\": \"Cathy Spinka\",\n    \"status\": \"in progress\",\n    \"products\": [\n      {\n        \"product_id\": 2,\n        \"product_name\": \"Vegetable Soup\",\n        \"quantity\": 2,\n        \"unit_cost\": 1975,\n        \"total_cost\": 3950\n      },\n      {\n        \"product_id\": 4,\n        \"product_name\": \"Peking Duck\",\n        \"quantity\": 1,\n        \"unit_cost\": 175,\n        \"total_cost\": 175\n      },\n      {\n        \"product_id\": 6,\n        \"product_name\": \"Pasta Carbonara\",\n        \"quantity\": 2,\n        \"unit_cost\": 925,\n        \"total_cost\": 1850\n      }\n    ],\n    \"total_cost\": 5975\n  },\n  {\n    \"id\": 13,\n    \"customer_id\": 5,\n    \"customer_name\": \"Cathy Spinka\",\n    \"customer_address\": \"7757 Darwin Causeway, Gerlachfort, 19822\",\n    \"restaurant_id\": 4,\n    \"restaurant_name\": \"Silver Grill\",\n    \"restaurant_address\": \"5515 Sol Inlet, Shelbyfurt, 49433-4387\",\n    \"courier_id\": 5,\n    \"courier_name\": \"Rev. Lavina Cartwright\",\n    \"status\": \"delivered\",\n    \"products\": [\n      {\n        \"product_id\": 22,\n        \"product_name\": \"Pappardelle alla Bolognese\",\n        \"quantity\": 1,\n        \"unit_cost\": 1274,\n        \"total_cost\": 1274\n      },\n      {\n        \"product_id\": 20,\n        \"product_name\": \"French Fries with Sausages\",\n        \"quantity\": 1,\n        \"unit_cost\": 1624,\n        \"total_cost\": 1624\n      }\n    ],\n    \"total_cost\": 2898\n  }\n]\n"
+            }
+          ]
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurant_id\": 1,\n  \"customer_id\": 3,\n  \"products\": [\n    {\n      \"id\": 2,\n      \"quantity\": 1\n    },\n    {\n      \"id\": 3,\n      \"quantity\": 3\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            },
+            "description": "Create a new order with products"
+          },
+          "response": [
+            {
+              "name": "Created - Order with Products",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"restaurant_id\": 1,\n  \"customer_id\": 3,\n  \"products\": [\n    {\n      \"id\": 2,\n      \"quantity\": 1\n    },\n    {\n      \"id\": 3,\n      \"quantity\": 3\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/orders",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "orders"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 15,\n  \"customer_id\": 3,\n  \"customer_name\": \"John Doe\",\n  \"customer_address\": \"123 Main St, City, State 12345\",\n  \"restaurant_id\": 1,\n  \"restaurant_name\": \"Fast Pub\",\n  \"restaurant_address\": \"5398 Quigley Harbor, North Lynelle, 60808\",\n  \"courier_id\": null,\n  \"courier_name\": null,\n  \"status\": \"pending\",\n  \"products\": [\n    {\n      \"product_id\": 2,\n      \"product_name\": \"Hamburger\",\n      \"quantity\": 1,\n      \"unit_cost\": 850,\n      \"total_cost\": 850\n    },\n    {\n      \"product_id\": 3,\n      \"product_name\": \"Fries\",\n      \"quantity\": 3,\n      \"unit_cost\": 350,\n      \"total_cost\": 1050\n    }\n  ],\n  \"total_cost\": 1900\n}\n"
+            }
+          ]
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"delivered\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/order/15/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "order",
+                "15",
+                "status"
+              ]
+            },
+            "description": "Update the status of an order (e.g., pending, in progress, delivered)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"delivered\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/order/15/status",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "order",
+                    "15",
+                    "status"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"delivered\"\n}\n"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
+}
