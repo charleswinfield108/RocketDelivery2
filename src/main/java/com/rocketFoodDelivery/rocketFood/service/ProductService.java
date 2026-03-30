@@ -115,10 +115,12 @@ public class ProductService {
      * @return ApiProductDTO representation of the product
      */
     private ApiProductDTO convertProductToDTO(Product product) {
-        ApiProductDTO dto = new ApiProductDTO();
-        dto.setId(product.getId());
-        dto.setName(product.getName());
-        dto.setCost(product.getCost());
-        return dto;
+        return ApiProductDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .cost(product.getCost())
+                .description(product.getDescription())
+                .restaurantId(product.getRestaurant() != null ? product.getRestaurant().getId() : null)
+                .build();
     }
 }
