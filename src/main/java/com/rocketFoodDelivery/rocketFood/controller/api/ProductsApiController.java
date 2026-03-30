@@ -5,6 +5,7 @@ import com.rocketFoodDelivery.rocketFood.dtos.ApiResponseDTO;
 import com.rocketFoodDelivery.rocketFood.exception.ResourceNotFoundException;
 import com.rocketFoodDelivery.rocketFood.service.ProductService;
 import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
+import com.rocketFoodDelivery.rocketFood.util.ValidationUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -51,14 +52,14 @@ public class ProductsApiController {
         log.debug("GET /api/products - restaurant: {}", restaurantParam);
         
         // Validate restaurant parameter exists
-        if (!isValidStringParameter(restaurantParam)) {
+        if (!ValidationUtil.isValidStringParameter(restaurantParam)) {
             log.warn("GET /api/products - Missing or empty restaurant parameter");
             return ResponseEntity.badRequest()
                     .body(ResponseBuilder.error("Restaurant parameter is required", "BAD_REQUEST"));
         }
         
         // Parse and validate restaurant ID
-        Integer restaurantId = parseAndValidateId(restaurantParam);
+        Integer restaurantId = ValidationUtil.parseAndValidateId(restaurantParam);
         if (restaurantId == null) {
             log.warn("GET /api/products - Invalid restaurant format: {}", restaurantParam);
             return ResponseEntity.badRequest()
@@ -99,14 +100,14 @@ public class ProductsApiController {
         log.debug("DELETE /api/products - restaurant: {}", restaurantParam);
         
         // Validate restaurant parameter exists
-        if (!isValidStringParameter(restaurantParam)) {
+        if (!ValidationUtil.isValidStringParameter(restaurantParam)) {
             log.warn("DELETE /api/products - Missing or empty restaurant parameter");
             return ResponseEntity.badRequest()
                     .body(ResponseBuilder.error("Restaurant parameter is required", "BAD_REQUEST"));
         }
         
         // Parse and validate restaurant ID
-        Integer restaurantId = parseAndValidateId(restaurantParam);
+        Integer restaurantId = ValidationUtil.parseAndValidateId(restaurantParam);
         if (restaurantId == null) {
             log.warn("DELETE /api/products - Invalid restaurant format: {}", restaurantParam);
             return ResponseEntity.badRequest()
@@ -128,32 +129,6 @@ public class ProductsApiController {
             log.warn("DELETE /api/products - Invalid input: {}", e.getMessage());
             return ResponseEntity.badRequest()
                     .body(ResponseBuilder.error(e.getMessage(), "BAD_REQUEST"));
-        }
-    }
-
-    /**
-     * Validates if a string parameter is not null or empty.
-     * Trims whitespace and checks if the result is non-empty.
-     * 
-     * @param param the string parameter to validate
-     * @return true if parameter is valid (non-null and non-empty after trim), false otherwise
-     */
-    private boolean isValidStringParameter(String param) {
-        return param != null && !param.trim().isEmpty();
-    }
-
-    /**
-     * Parses a string to an integer and validates it's positive.
-     * 
-     * @param param the string parameter to parse (should be numeric)
-     * @return the parsed integer if valid (> 0), null if invalid format or ≤ 0
-     */
-    private Integer parseAndValidateId(String param) {
-        try {
-            Integer id = Integer.parseInt(param);
-            return (id > 0) ? id : null;
-        } catch (NumberFormatException e) {
-            return null;
         }
     }
 }
