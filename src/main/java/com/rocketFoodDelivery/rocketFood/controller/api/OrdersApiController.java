@@ -16,7 +16,20 @@ import java.util.List;
 
 /**
  * REST API Controller for order retrieval and deletion operations.
- * Handles GET requests with type-based filtering and DELETE requests for order removal.
+ * 
+ * Endpoints:
+ * - GET /api/orders?type={type}&id={id} - Retrieve orders filtered by entity type and ID
+ * - DELETE /api/order/{id} - Delete an order by ID with cascade delete of related ProductOrders
+ * 
+ * Supported filter types for GET:
+ * - "restaurant": Retrieve orders for a specific restaurant
+ * - "customer": Retrieve orders placed by a specific customer
+ * - "courier": Retrieve orders assigned to a specific courier
+ * 
+ * All endpoints validate input and return appropriate HTTP status codes:
+ * - 200 OK: Success
+ * - 400 Bad Request: Invalid input (missing/invalid parameters, invalid type)
+ * - 404 Not Found: Entity or resource not found
  */
 @Slf4j
 @RestController
@@ -27,10 +40,14 @@ public class OrdersApiController {
     private OrderService orderService;
     
     /**
-     * Retrieves orders filtered by type and ID.
-     * @param type filter type: "restaurant", "customer", or "courier"
-     * @param id entity ID to filter by
-     * @return ResponseEntity with list of orders
+     * Retrieves orders filtered by entity type and ID.
+     * 
+     * Validates query parameters and delegates to OrderService for business logic.
+     * All parameters are required and must meet specific validation criteria.
+     * 
+     * @param type Filter type (case-insensitive): "restaurant", "customer", or "courier"
+     * @param idParam Entity ID as string (must be valid positive integer)
+     * @return ResponseEntity with 200/400/404 status and ApiResponseDTO
      */
     @GetMapping("/orders")
     @PreAuthorize("permitAll")
@@ -38,86 +55,108 @@ public class OrdersApiController {
             @RequestParam(value = "type", required = false) String type,
             @RequestParam(value = "id", required = false) String idParam) {
         
+        log.debug("GET /api/orders - type: {}, id: {}", type, idParam);
+        
         // Validate type parameter
-        if (type == null || type.isEmpty()) {
-            return ResponseEntity
-                    .badRequest()
+        if (!isValidStringParameter(type)) {
+            log.warn("GET /api/orders - Missing or empty type parameter");
+            return ResponseEntity.badRequest()
                     .body(ResponseBuilder.error("Type parameter is required", "BAD_REQUEST"));
         }
         
         // Validate id parameter
-        if (idParam == null || idParam.isEmpty()) {
-            return ResponseEntity
-                    .badRequest()
+        if (!isValidStringParameter(idParam)) {
+            log.warn("GET /api/orders - Missing or empty id parameter");
+            return ResponseEntity.badRequest()
                     .body(ResponseBuilder.error("ID parameter is required", "BAD_REQUEST"));
         }
         
-        int id;
-        try {
-            id = Integer.parseInt(idParam);
-        } catch (NumberFormatException e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(ResponseBuilder.error("ID must be a valid integer", "BAD_REQUEST"));
+        // Parse and validate id
+        Integer id = parseAndValidateId(idParam);
+        if (id == null) {
+            log.warn("GET /api/orders - Invalid id format: {}", idParam);
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error("ID must be a valid integer greater than 0", "BAD_REQUEST"));
         }
         
-        if (id <= 0) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(ResponseBuilder.error("ID must be greater than 0", "BAD_REQUEST"));
-        }
-        
-        // Normalize type to lowercase for comparison
         String normalizedType = type.toLowerCase();
         
         try {
             List<ApiOrderDTO> orders = orderService.getOrdersByType(normalizedType, id);
-            return ResponseEntity
-                    .ok(ResponseBuilder.success(orders, "Orders retrieved successfully"));
+            log.info("GET /api/orders - Retrieved {} orders for type: {}, id: {}", 
+                    orders.size(), normalizedType, id);
+            return ResponseEntity.ok(ResponseBuilder.success(orders, "Orders retrieved successfully"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(ResponseBuilder.error("Invalid type. Must be 'restaurant', 'customer', or 'courier'", "BAD_REQUEST"));
+            log.warn("GET /api/orders - Invalid type: {}", type);
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error(
+                            "Invalid type. Must be 'restaurant', 'customer', or 'courier'", 
+                            "BAD_REQUEST"));
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
+            log.warn("GET /api/orders - {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ResponseBuilder.error(e.getMessage(), "NOT_FOUND"));
         }
     }
     
     /**
-     * Deletes an order by ID.
-     * @param id order ID to delete
-     * @return ResponseEntity with success message
+     * Deletes an order by ID including all associated ProductOrder entries.
+     * 
+     * Validates the ID parameter and delegates to OrderService for deletion.
+     * Performs cascade delete of related ProductOrder records.
+     * 
+     * @param idParam Order ID as string (must be valid positive integer)
+     * @return ResponseEntity with 200/400/404 status and ApiResponseDTO
      */
     @DeleteMapping("/order/{id}")
     @PreAuthorize("permitAll")
     public ResponseEntity<ApiResponseDTO> deleteOrder(
             @PathVariable(value = "id") String idParam) {
         
-        int id;
-        try {
-            id = Integer.parseInt(idParam);
-        } catch (NumberFormatException e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(ResponseBuilder.error("ID must be a valid integer", "BAD_REQUEST"));
-        }
+        log.debug("DELETE /api/order/{id} - id: {}", idParam);
         
-        if (id <= 0) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(ResponseBuilder.error("ID must be greater than 0", "BAD_REQUEST"));
+        Integer id = parseAndValidateId(idParam);
+        if (id == null) {
+            log.warn("DELETE /api/order/{id} - Invalid id format: {}", idParam);
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error("ID must be a valid integer greater than 0", "BAD_REQUEST"));
         }
         
         try {
             orderService.deleteOrder(id);
-            return ResponseEntity
-                    .ok(ResponseBuilder.success("", "Order deleted successfully"));
+            log.info("DELETE /api/order/{id} - Order deleted successfully: {}", id);
+            return ResponseEntity.ok(ResponseBuilder.success("", "Order deleted successfully"));
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
+            log.warn("DELETE /api/order/{id} - {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ResponseBuilder.error(e.getMessage(), "NOT_FOUND"));
+        }
+    }
+    
+    // ==================== VALIDATION HELPER METHODS ====================
+    
+    /**
+     * Validates if a string parameter is not null and not empty.
+     * 
+     * @param param Parameter to validate
+     * @return true if parameter is valid (non-null and non-empty), false otherwise
+     */
+    private boolean isValidStringParameter(String param) {
+        return param != null && !param.isEmpty();
+    }
+    
+    /**
+     * Parses string ID to integer and validates it's positive.
+     * 
+     * @param idParam ID as string
+     * @return Parsed id if valid, null if invalid
+     */
+    private Integer parseAndValidateId(String idParam) {
+        try {
+            int id = Integer.parseInt(idParam);
+            return (id > 0) ? id : null;
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }
