@@ -2,10 +2,23 @@
 
 A robust backend application for managing food delivery operations, including restaurants, products, orders, customers, couriers, and their respective statuses. This system provides a complete API for handling restaurant management, order processing, and delivery tracking.
 
-## 🛠️ Tech Stack
+## � Table of Contents
+
+- [Tech Stack](#️-tech-stack)
+- [Project Structure](#-project-structure)
+- [Installation & Setup Instructions](#-installation--setup-instructions)
+- [Environment Variables](#️-environment-variables)
+- [API Documentation](#-api-documentation)
+- [Author](#-author)
+- [License](#-license)
+- [Additional Notes](#-additional-notes)
+
+## �🛠️ Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
+[⬆ Back to Table of Contents](#-table-of-contents)
+
 | **Language** | Java 21 |
 | **Framework** | Spring Boot 3.5.13 |
 | **Build Tool** | Maven |
@@ -76,6 +89,8 @@ rdelivery-template-m12/
 │       └── java/com/rocketFoodDelivery/rocketFood/  # Test classes
 ├── pom.xml                              # Maven configuration
 └── README.md                            # This file
+[⬆ Back to Table of Contents](#-table-of-contents)
+
 ```
 
 ## 📋 Installation & Setup Instructions
@@ -146,6 +161,8 @@ The application will start on `http://localhost:8080`
 
 Upon startup, the application automatically seeds the database with sample data (restaurants, products, users, orders, etc.) via the `DataSeeder` component. This allows immediate testing of the API without manual data entry.
 
+[⬆ Back to Table of Contents](#-table-of-contents)
+
 ## ⚙️ Environment Variables
 
 Configure the following in `src/main/resources/application.properties`:
@@ -171,6 +188,8 @@ Configure the following in `src/main/resources/application.properties`:
 |----------|-----------|---------|
 | `spring.devtools.restart.enabled` | Enable automatic restart on file changes | `true` |
 | `spring.devtools.livereload.enabled` | Enable browser LiveReload | `true` |
+
+[⬆ Back to Table of Contents](#-table-of-contents)
 
 ## 📚 API Documentation
 
@@ -266,15 +285,21 @@ All errors are returned in a standardized format:
 }
 ```
 
+[⬆ Back to Table of Contents](#-table-of-contents)
+
 ## 👤 Author
 
 **Charles Winfield**
 
 - GitHub: [@charleswinfield108](https://github.com/charleswinfield108)
 
+[⬆ Back to Table of Contents](#-table-of-contents)
+
 ## 📜 License
 
 This project is not currently licensed. Please check the repository for license information.
+
+[⬆ Back to Table of Contents](#-table-of-contents)
 
 ## 📝 Additional Notes
 
@@ -284,3 +309,5 @@ This project is not currently licensed. Please check the repository for license 
 - **Database Schema:** The database schema is automatically managed by Hibernate during application startup based on the `spring.jpa.hibernate.ddl-auto` setting.
 
 For more information or issues, visit the [GitHub repository](https://github.com/charleswinfield108/RocketDelivery2).
+
+[⬆ Back to Table of Contents](#-table-of-contents)
