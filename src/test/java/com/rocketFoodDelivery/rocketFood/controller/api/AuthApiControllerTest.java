@@ -5,7 +5,6 @@ import com.rocketFoodDelivery.rocketFood.dtos.AuthRequestDTO;
 import com.rocketFoodDelivery.rocketFood.models.UserEntity;
 import com.rocketFoodDelivery.rocketFood.repository.UserRepository;
 import com.rocketFoodDelivery.rocketFood.security.JwtUtil;
-import com.rocketFoodDelivery.rocketFood.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@SuppressWarnings("null")
 public class AuthApiControllerTest {
     
     @Autowired
@@ -32,13 +32,10 @@ public class AuthApiControllerTest {
     
     @Autowired
     private UserRepository userRepository;
-    
-    @Autowired
-    private AuthService authService;
-    
+
     @Autowired
     private JwtUtil jwtUtil;
-    
+
     @BeforeEach
     public void setup() {
         // Create test user for authentication tests
@@ -364,8 +361,6 @@ public class AuthApiControllerTest {
     public void testTokenContainsExpirationClaim_ExpiresIn1Hour() throws Exception {
         AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
         
-        long beforeRequest = System.currentTimeMillis();
-        
         String responseBody = mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validAuth)))
@@ -512,7 +507,7 @@ public class AuthApiControllerTest {
         AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
         
         long beforeRequest = System.currentTimeMillis();
-        
+
         String responseBody = mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validAuth)))

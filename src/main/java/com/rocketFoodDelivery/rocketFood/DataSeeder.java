@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+@SuppressWarnings("null")
 @Component
 @RequiredArgsConstructor
 public class DataSeeder {
@@ -328,6 +329,7 @@ public class DataSeeder {
            // Order status logic: courier assigned = "in progress" or "delivered", no courier = "pending"
            OrderStatus orderStatus = courier != null ? orderStatuses.get(random.nextInt(2) + 1) : orderStatuses.get(0);
            
+           @SuppressWarnings("null")
            Order order = Order.builder()
                    .restaurant(restaurants.get(random.nextInt(restaurants.size())))
                    .customer(customers.get(random.nextInt(customers.size())))
