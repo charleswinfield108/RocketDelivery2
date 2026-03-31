@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 @Component
 public class JwtUtil {
@@ -23,8 +24,21 @@ public class JwtUtil {
     }
 
     public String generateAccessToken(UserEntity user) {
+        long nowMillis = System.currentTimeMillis();
+        long expirationMillis = nowMillis + (60 * 60 * 1000); // 1 hour expiration
+        
+        Date now = new Date(nowMillis);
+        Date expiry = new Date(expirationMillis);
+        
+        String role = user.isEmployee() ? "ROLE_EMPLOYEE" : "ROLE_USER";
+        
         return Jwts.builder()
                 .subject(String.format("%s,%s", user.getId(), user.getEmail()))
+                .claim("username", user.getEmail())
+                .claim("role", role)
+                .issuedAt(now)
+                .expiration(expiry)
+                .issuer("rocketfood-app")
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -51,6 +65,34 @@ public class JwtUtil {
 
     public String getSubject(String token) {
         return parseClaims(token).getSubject();
+    }
+
+    public String getUsername(String token) {
+        return parseClaims(token).get("username", String.class);
+    }
+
+    public String getRole(String token) {
+        return parseClaims(token).get("role", String.class);
+    }
+
+    public String getIssuer(String token) {
+        return parseClaims(token).getIssuer();
+    }
+
+    public long getIssuedAt(String token) {
+        return parseClaims(token).getIssuedAt().getTime();
+    }
+
+    public long getExpiresAt(String token) {
+        return parseClaims(token).getExpiration().getTime();
+    }
+
+    public boolean isTokenExpired(String token) {
+        try {
+            return parseClaims(token).getExpiration().before(new Date());
+        } catch (ExpiredJwtException e) {
+            return true;
+        }
     }
 
     private Claims parseClaims(String token) {
