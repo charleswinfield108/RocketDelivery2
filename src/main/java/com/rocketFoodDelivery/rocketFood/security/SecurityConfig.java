@@ -53,6 +53,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/address").permitAll()
                 .requestMatchers("/api/orders").permitAll()
                 .requestMatchers("/api/order/**").permitAll()
+                .requestMatchers("/api/products").permitAll()
                 .requestMatchers("/backoffice/**").permitAll()
                 .anyRequest().authenticated()
             )
