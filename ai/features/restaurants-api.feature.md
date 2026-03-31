@@ -1,141 +1,148 @@
-# 🤖 AI_FEATURE_Restaurants API
+# 🤖🛠️ AI Feature Specification - Restaurants API
 
-## 🎯 Feature Identity
-
-- **Feature Name:** Restaurants API - Complete CRUD REST Endpoints
-- **Related Area:** Backend / API / Controller
-
----
-
-## 🎪 Feature Goal
-
-Provide a complete REST API interface for restaurant management that allows mobile apps and clients to retrieve, create, update, and delete restaurants. The API must return properly formatted responses with restaurant data, handle validation errors gracefully, support filtering and pagination where applicable, and maintain consistency across all endpoints using the ResponseBuilder utility.
+**Feature ID:** RESTAURANTS-API  
+**Priority:** High  
+**Status:** In Development  
+**Release Version:** Module 12  
+**Last Updated:** March 31, 2026
 
 ---
 
-## 🎯 Feature Scope
+## 📋 1. Feature Goal & Scope
 
-### ✅ In Scope (Included)
+### Feature Goal
+Implement a comprehensive REST API for managing restaurants in the Rocket Food Delivery application. This API provides complete CRUD (Create, Read, Update, Delete) functionality for restaurant management, enabling restaurant owners to manage their restaurant information and enabling customers to retrieve and filter restaurant data.
 
-- GET /api/restaurants endpoint to retrieve all restaurants (with optional pagination/filtering)
-- GET /api/restaurants/{id} endpoint to retrieve a single restaurant by ID
-- POST /api/restaurants endpoint to create a new restaurant
-- PUT /api/restaurants/{id} endpoint to update an existing restaurant
-- DELETE /api/restaurants/{id} endpoint to delete a restaurant
-- Request validation for input data (name, address, phone)
-- Response consistency using ResponseBuilder utility
-- Proper HTTP status codes for all outcomes (200, 201, 400, 404, 500)
-- Error handling with appropriate error messages
-- RestaurantApiController implementation with all 5 endpoints
-- Integration with RestaurantService and RestaurantRepository
+### In-Scope
+- ✅ **GET /api/restaurants** - List all restaurants with optional filtering by rating and price range
+- ✅ **GET /api/restaurants/{id}** - Retrieve a specific restaurant by ID
+- ✅ **POST /api/restaurants** - Create a new restaurant (requires authentication)
+- ✅ **PUT /api/restaurants/{id}** - Update an existing restaurant (requires authentication)
+- ✅ **DELETE /api/restaurants/{id}** - Delete a restaurant (requires authentication)
+- ✅ Request validation (required fields, format validation, business rule validation)
+- ✅ Error handling (400, 401, 403, 404, 500 status codes)
+- ✅ Response standardization (ApiResponseDTO wrapper for all endpoints)
+- ✅ Data persistence (SQL database with JPA/Hibernate)
+- ✅ Relationship handling (Addresses, Products, Orders, Users)
+- ✅ Authorization checks (only restaurant owner can update/delete)
+- ✅ Cascade deletion of related entities (Products, Orders)
 
-### ❌ Out of Scope (Excluded)
+### Out-of-Scope
+- ❌ Restaurant image upload/management
+- ❌ Restaurant ratings/reviews calculations
+- ❌ Advanced search/full-text search
+- ❌ Bulk import/export functionality
+- ❌ Analytics and reporting
+- ❌ Restaurant analytics dashboard
+- ❌ Advanced filtering (location search, distance filtering)
+- ❌ Multi-tenant support
+- ❌ Modifying Restaurant entity model structure
 
-- Modifying Restaurant entity model
-- Search by restaurant name or cuisine type
-- Filtering by rating or location
-- Advanced pagination (beyond basic implementation)
-- Restaurant image/file uploads
-- Complex business logic (handled in service layer)
-- Authentication/authorization (assumed pre-authenticated)
-- Batch operations (create/delete multiple restaurants)
-
----
-
-## 🔧 Sub-Requirements (Feature Breakdown)
-
-- **GET All Restaurants:** Implement endpoint to retrieve list of all restaurants with basic metadata
-- **GET Single Restaurant:** Implement endpoint to retrieve detailed info for one restaurant by ID
-- **CREATE Restaurant:** Implement endpoint to accept restaurant data, validate, and persist new restaurant
-- **UPDATE Restaurant:** Implement endpoint to modify existing restaurant and return updated data
-- **DELETE Restaurant:** Implement endpoint to remove restaurant and handle cascade deletion
-- **Request Parsing:** Parse and validate JSON request bodies for POST/PUT operations
-- **Response Formatting:** Use ResponseBuilder to construct consistent ApiResponseDTO for all responses
-- **Error Handling:** Return appropriate error responses for validation failures and edge cases
-- **Controller Logic:** Controllers delegate all business logic to service layer (stay thin)
-- **Status Codes:** Return correct HTTP status codes (200 OK, 201 Created, 400 Bad Request, 404 Not Found, 500 Error)
 
 ---
 
-## 👥 User Flow / Logic (High Level)
+## 🔄 2. Requirements Breakdown & User Flow
 
-### GET All Restaurants Flow
-1. Mobile app requests GET /api/restaurants
-2. Controller receives request and delegates to RestaurantService.getAllRestaurants()
-3. Service calls RestaurantRepository to fetch all restaurants from database
-4. Repository returns list of restaurants
-5. Service optionally filters or processes list
-6. Controller constructs response using ResponseBuilder with list of ApiRestaurantDTOs
-7. Controller returns HTTP 200 with restaurants array in response body
+### Functional Requirements
 
-### GET Single Restaurant Flow
-1. Mobile app requests GET /api/restaurants/3
-2. Controller receives restaurant ID and validates it's numeric
-3. Controller delegates to RestaurantService.getRestaurantById(3)
-4. Service calls RestaurantRepository.findById(3)
-5. Repository executes SQL query and returns restaurant
-6. If not found → Service throws ResourceNotFoundException
-7. Service returns restaurant to controller
-8. Controller constructs response using ResponseBuilder with single ApiRestaurantDTO
-9. Controller returns HTTP 200 with restaurant data
-10. If not found → Controller returns HTTP 404 Not Found
+#### FR1: List Restaurants
+- User can fetch a list of all restaurants
+- Results can be filtered by minimum rating (minRating >= value)
+- Results can be filtered by maximum price (priceRange <= value)
+- Results support filtering combination (minRating AND maxPrice)
+- Response includes pagination metadata (total count, page number, size, total pages)
+- Response is sorted by restaurant name in ascending order
 
-### CREATE Restaurant Flow
-1. Mobile app sends POST /api/restaurants with name, address, phone in JSON body
-2. Controller deserializes JSON into ApiCreateRestaurantDTO
-3. Spring validation annotations validate DTO fields
-4. If validation fails → return 400 Bad Request with errors
-5. Controller delegates to RestaurantService.createRestaurant(dto)
-6. Service validates business rules (if any)
-7. Service creates Restaurant entity from DTO
-8. Service calls RestaurantRepository.save(restaurant) (native SQL INSERT)
-9. Repository executes parameterized INSERT query
-10. Database generates restaurant ID and persists record
-11. Service returns created restaurant to controller
-12. Controller constructs response using ResponseBuilder
-13. Controller returns HTTP 201 Created with new restaurant data
-14. Response includes newly generated restaurant ID
+#### FR2: Get Restaurant Details
+- User can fetch detailed information about a specific restaurant
+- System validates restaurant existence (returns 404 if not found)
+- Response includes all restaurant information and relationships
+- Restaurant must be retrievable regardless of active status
 
-### UPDATE Restaurant Flow
-1. Mobile app sends PUT /api/restaurants/3 with updated fields (name, address, phone, rating)
-2. Controller receives restaurant ID and DTO
-3. Controller verifies restaurant exists (calls service or validates)
-4. Spring validation validates DTO fields against constraints
-5. If validation fails → return 400 Bad Request
-6. Controller delegates to RestaurantService.updateRestaurant(id, dto)
-7. Service retrieves current restaurant
-8. Service applies updates from DTO to entity
-9. Service validates updated entity
-10. Service calls RestaurantRepository.update(id, restaurant)
-11. Repository executes parameterized UPDATE query
-12. Database updates record and persists changes
-13. Service returns updated restaurant to controller
-14. Controller constructs response using ResponseBuilder
-15. Controller returns HTTP 200 OK with updated restaurant data
+#### FR3: Create Restaurant
+- Authenticated user can create a new restaurant
+- All required fields must be provided (name, description, address, ownerEmail, rating, priceRange)
+- System validates field formats and business rules
+- New restaurant is created with ACTIVE status
+- Response includes the created restaurant with generated ID
+- Restaurant must be linked to a valid address
 
-### DELETE Restaurant Flow
-1. Mobile app sends DELETE /api/restaurants/3
-2. Controller receives restaurant ID and validates it's numeric
-3. Controller verifies restaurant exists
-4. Controller delegates to RestaurantService.deleteRestaurant(3)
-5. Service initiates cascade deletion:
-   - Delete all products for restaurant
-   - Delete all product_orders for those products
-   - Delete all orders from restaurant (or handle as orphaned)
-   - Delete the restaurant
-6. Service calls RestaurantRepository.delete(3)
-7. Repository executes parameterized DELETE query(ies)
-8. Database removes records
-9. Service returns confirmation to controller
-10. Controller constructs response using ResponseBuilder
-11. Controller returns HTTP 200 OK or 204 No Content
-12. If restaurant not found → return 404 Not Found
+#### FR4: Update Restaurant
+- Authenticated user can update an existing restaurant
+- User must be the restaurant owner (authorization check)
+- Partial updates allowed (not all fields required)
+- System validates updated field formats and business rules
+- Response includes updated restaurant data
+- Cannot update restaurant ID or createdAt timestamp
+
+#### FR5: Delete Restaurant
+- Authenticated user can delete a restaurant
+- User must be the restaurant owner (authorization check)
+- System validates restaurant existence before deletion
+- Cascade delete related data (products, product orders, orders)
+- Response confirms successful deletion
+- Deleted restaurant cannot be retrieved
+
+### User Flows
+
+#### Flow 1: Browse Restaurants (Public)
+```
+1. Customer accesses homepage
+2. System calls GET /api/restaurants (no filters)
+3. API returns list of all restaurants with pagination
+4. Customer views restaurant list, sorted by name
+5. Customer optionally filters by minRating and/or maxPrice
+6. System calls GET /api/restaurants?minRating=4&maxPrice=25
+7. API returns filtered restaurants matching criteria
+8. Customer selects a restaurant from the list
+9. Customer's browser shows GET /api/restaurants/{id}
+10. API returns detailed restaurant information
+11. Customer views restaurant details, menu, and products
+```
+
+#### Flow 2: Create Restaurant (Authenticated)
+```
+1. Restaurant owner logs in (authenticated)
+2. Owner navigates to "Create Restaurant" form
+3. Owner fills in restaurant details
+4. Owner submits form with POST /api/restaurants
+5. API validates all required fields are present
+6. API validates field formats and business rules
+7. API creates restaurant in database with ACTIVE status
+8. API returns 201 Created with new restaurant data including generated ID
+9. Restaurant is now visible in the restaurant list
+```
+
+#### Flow 3: Update Restaurant (Authenticated)
+```
+1. Restaurant owner logs in and navigates to restaurant settings
+2. Owner views current restaurant details
+3. Owner modifies some fields (description, priceRange, etc.)
+4. Owner submits update with PUT /api/restaurants/{id}
+5. API verifies owner authorization (must be the restaurant owner)
+6. API validates updated fields
+7. API updates restaurant in database
+8. API returns 200 OK with updated restaurant data
+9. Changes are reflected across the application
+```
+
+#### Flow 4: Delete Restaurant (Authenticated)
+```
+1. Restaurant owner logs in and navigates to restaurant settings
+2. Owner clicks "Delete Restaurant" button
+3. System shows confirmation dialog
+4. Owner confirms deletion
+5. Browser sends DELETE /api/restaurants/{id}
+6. API verifies owner authorization
+7. API performs cascade delete of related data
+8. API returns 200 OK with success message
+9. Restaurant is removed from system
+10. Owner is redirected to dashboard
+```
 
 ---
 
-## 🖥️ Interfaces (Pages, Endpoints, Screens)
-
-### 🔌 Backend / API
+## 🖥️ 3. Interfaces Involved (Endpoints & DTOs)
 
 #### GET /api/restaurants (List All)
 - **Request Parameters:** (Optional)
