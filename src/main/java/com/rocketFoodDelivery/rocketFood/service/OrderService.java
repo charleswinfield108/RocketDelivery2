@@ -215,6 +215,52 @@ public class OrderService {
         return result;
     }
     
+    /**
+     * Updates the status of an existing order.
+     * 
+     * Validates that the order exists before updating.
+     * Finds or creates an OrderStatus entity with the status name.
+     * Updates the order status in the database.
+     * 
+     * @param orderId the order ID to update
+     * @param statusValue the new status value
+     * @throws ResourceNotFoundException if order with given ID does not exist
+     * @throws IllegalArgumentException if status is null or empty
+     */
+    @Transactional
+    public void updateOrderStatus(int orderId, String statusValue) {
+        logger.debug("OrderService.updateOrderStatus() - orderId: {}, status: {}", orderId, statusValue);
+        
+        // Validate status
+        if (statusValue == null || statusValue.trim().isEmpty()) {
+            logger.warn("OrderService.updateOrderStatus() - Invalid status: null or empty");
+            throw new IllegalArgumentException("Status cannot be null or empty");
+        }
+        
+        // Verify order exists and fetch it
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> {
+                    logger.warn("OrderService.updateOrderStatus() - Order not found: {}", orderId);
+                    return new ResourceNotFoundException("Order with ID " + orderId + " not found");
+                });
+        
+        // Find or create OrderStatus with the given name
+        OrderStatus orderStatus = orderStatusRepository.findAll().stream()
+                .filter(os -> statusValue.equalsIgnoreCase(os.getName()))
+                .findFirst()
+                .orElseGet(() -> {
+                    // If status doesn't exist, create it
+                    logger.debug("OrderService.updateOrderStatus() - Creating new OrderStatus: {}", statusValue);
+                    OrderStatus newStatus = OrderStatus.builder().name(statusValue).build();
+                    return orderStatusRepository.save(newStatus);
+                });
+        
+        // Update the order status
+        order.setOrder_status(orderStatus);
+        orderRepository.save(order);
+        logger.info("OrderService.updateOrderStatus() - Order status updated: id={}, status={}", orderId, statusValue);
+    }
+    
     // ==================== PRIVATE HELPER METHODS ====================
     
     /**

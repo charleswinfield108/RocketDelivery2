@@ -6,6 +6,8 @@ import com.rocketFoodDelivery.rocketFood.dtos.ApiResponseDTO;
 import com.rocketFoodDelivery.rocketFood.exception.ResourceNotFoundException;
 import com.rocketFoodDelivery.rocketFood.service.OrderService;
 import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
+import com.rocketFoodDelivery.rocketFood.dtos.UpdateOrderStatusRequestDTO;
+import com.rocketFoodDelivery.rocketFood.dtos.OrderStatusResponseDTO;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -168,6 +170,59 @@ public class OrdersApiController {
             log.warn("DELETE /api/order/{id} - {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ResponseBuilder.error(e.getMessage(), "NOT_FOUND"));
+        }
+    }
+
+    /**
+     * Updates the status of an existing order.
+     * 
+     * Validates the order ID in path and status in request body.
+     * Delegates to OrderService to update the status in database.
+     * Returns simplified response with just the status field.
+     * 
+     * @param idParam Order ID as string (must be valid positive integer)
+     * @param request the status update request containing the new status
+     * @return ResponseEntity with 200/400/404 status and OrderStatusResponseDTO
+     */
+    @PostMapping("/order/{id}/status")
+    @PreAuthorize("permitAll")
+    public ResponseEntity<?> updateOrderStatus(
+            @PathVariable(value = "id") String idParam,
+            @RequestBody UpdateOrderStatusRequestDTO request) {
+        
+        log.debug("POST /api/order/{id}/status - id: {}, status: {}", idParam, 
+                request != null ? request.getStatus() : "null");
+        
+        // Validate ID parameter
+        Integer id = parseAndValidateId(idParam);
+        if (id == null) {
+            log.warn("POST /api/order/{id}/status - Invalid id format: {}", idParam);
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error("ID must be a valid integer greater than 0", "BAD_REQUEST"));
+        }
+        
+        // Validate request body and status
+        if (request == null || request.getStatus() == null || request.getStatus().trim().isEmpty()) {
+            log.warn("POST /api/order/{id}/status - Missing or empty status");
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error("Status field is required and cannot be empty", "BAD_REQUEST"));
+        }
+        
+        try {
+            orderService.updateOrderStatus(id, request.getStatus());
+            log.info("POST /api/order/{id}/status - Order status updated: id={}, status={}", id, request.getStatus());
+            OrderStatusResponseDTO response = OrderStatusResponseDTO.builder()
+                    .status(request.getStatus())
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException e) {
+            log.warn("POST /api/order/{id}/status - {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseBuilder.error(e.getMessage(), "NOT_FOUND"));
+        } catch (IllegalArgumentException e) {
+            log.warn("POST /api/order/{id}/status - Validation error: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error(e.getMessage(), "BAD_REQUEST"));
         }
     }
     
