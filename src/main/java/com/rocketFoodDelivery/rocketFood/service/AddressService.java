@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Optional;
 
 
+@SuppressWarnings("null")
 @Service
 public class AddressService {
-    
     private final AddressRepository addressRepository;
 
     @Autowired
@@ -34,13 +34,14 @@ public class AddressService {
         }
     }
     
-    @SuppressWarnings("all")
+    @SuppressWarnings("null")
     public Address saveAddress(Address address){
         Address savedAddress = (Address) addressRepository.save(address);
         return savedAddress != null ? savedAddress : address;
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public int saveAddress(String streetAddress, String city, String postalCode) {
         try {
             addressRepository.saveAddress(streetAddress, city, postalCode);

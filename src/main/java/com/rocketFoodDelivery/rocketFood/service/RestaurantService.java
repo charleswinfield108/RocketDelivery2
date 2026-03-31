@@ -17,6 +17,7 @@ import java.util.Optional;
 
 
 @Service
+@SuppressWarnings("unused")
 public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final ProductRepository productRepository;

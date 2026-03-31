@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rocketFoodDelivery.rocketFood.dtos.AuthRequestDTO;
 import com.rocketFoodDelivery.rocketFood.models.UserEntity;
 import com.rocketFoodDelivery.rocketFood.repository.UserRepository;
+import com.rocketFoodDelivery.rocketFood.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,10 @@ public class AuthApiControllerTest {
     
     @Autowired
     private UserRepository userRepository;
-    
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @BeforeEach
     @SuppressWarnings("null")
     public void setup() {
@@ -40,8 +44,18 @@ public class AuthApiControllerTest {
                 .email("admin@example.com")
                 .password("admin123")
                 .name("Admin User")
+                .isEmployee(false)
                 .build();
         userRepository.save(testUser);
+        
+        // Create employee user for role-based tests
+        UserEntity employeeUser = UserEntity.builder()
+                .email("employee@example.com")
+                .password("employee123")
+                .name("Employee User")
+                .isEmployee(true)
+                .build();
+        userRepository.save(employeeUser);
     }
     
     // ==================== VALID AUTHENTICATION CASES ====================
@@ -261,5 +275,307 @@ public class AuthApiControllerTest {
                 .content(objectMapper.writeValueAsString(invalidAuth)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").isNotEmpty());
+    }
+    
+    // ==================== JWT CLAIMS VALIDATION ====================
+    
+    @Test
+    public void testTokenContainsSubjectClaim_FormatIsUserIdAndEmail() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        String responseBody = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String subject = jwtUtil.getSubject(token);
+        
+        // Subject should be in format: "userId,email"
+        assert subject.contains(",");
+        assert subject.contains("admin@example.com");
+    }
+    
+    @Test
+    public void testTokenContainsUsernameClaim() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        String responseBody = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String username = jwtUtil.getUsername(token);
+        
+        assert username.equals("admin@example.com");
+    }
+    
+    @Test
+    public void testTokenContainsIssuerClaim() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        String responseBody = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String issuer = jwtUtil.getIssuer(token);
+        
+        assert issuer.equals("rocketfood-app");
+    }
+    
+    @Test
+    public void testTokenContainsIssuedAtClaim() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        long beforeRequest = System.currentTimeMillis();
+        
+        String responseBody = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        long afterRequest = System.currentTimeMillis();
+        
+        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        long issuedAt = jwtUtil.getIssuedAt(token);
+        
+        // IssuedAt should be within 5 seconds of the request time
+        assert issuedAt >= (beforeRequest - 5000) && issuedAt <= (afterRequest + 5000);
+    }
+    
+    @Test
+    public void testTokenContainsExpirationClaim_ExpiresIn1Hour() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        String responseBody = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        long expiresAt = jwtUtil.getExpiresAt(token);
+        
+        // ExpiresAt should be approximately 1 hour (3600000 ms) from issuedAt
+        long issuedAt = jwtUtil.getIssuedAt(token);
+        long difference = expiresAt - issuedAt;
+        
+        // Allow 5 second variance
+        assert difference >= 3595000 && difference <= 3605000;
+    }
+    
+    @Test
+    public void testTokenNotExpiredImmediatelyAfterGeneration() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        String responseBody = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        
+        boolean isExpired = jwtUtil.isTokenExpired(token);
+        assert !isExpired;
+    }
+    
+    // ==================== ROLE-BASED TOKENS ====================
+    
+    @Test
+    public void testNonEmployeeUserToken_ContainsROLE_USERRole() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        String responseBody = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String role = jwtUtil.getRole(token);
+        
+        assert role.equals("ROLE_USER");
+    }
+    
+    @Test
+    public void testEmployeeUserToken_ContainsROLE_EMPLOYEERole() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("employee@example.com", "employee123");
+        
+        String responseBody = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String role = jwtUtil.getRole(token);
+        
+        assert role.equals("ROLE_EMPLOYEE");
+    }
+    
+    @Test
+    public void testDifferentUsersReceiveDifferentTokens() throws Exception {
+        AuthRequestDTO userAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        AuthRequestDTO employeeAuth = new AuthRequestDTO("employee@example.com", "employee123");
+        
+        String userResponse = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String employeeResponse = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(employeeAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String userToken = objectMapper.readTree(userResponse).get("data").get("token").asText();
+        String employeeToken = objectMapper.readTree(employeeResponse).get("data").get("token").asText();
+        
+        // Different tokens should be generated
+        assert !userToken.equals(employeeToken);
+    }
+    
+    @Test
+    public void testTokenRoleMatchesUserType() throws Exception {
+        // Test non-employee user
+        AuthRequestDTO userAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        String userResponse = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String userToken = objectMapper.readTree(userResponse).get("data").get("token").asText();
+        String userRole = jwtUtil.getRole(userToken);
+        
+        // Test employee user
+        AuthRequestDTO employeeAuth = new AuthRequestDTO("employee@example.com", "employee123");
+        
+        String employeeResponse = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(employeeAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String employeeToken = objectMapper.readTree(employeeResponse).get("data").get("token").asText();
+        String employeeRole = jwtUtil.getRole(employeeToken);
+        
+        // Roles should be different
+        assert userRole.equals("ROLE_USER");
+        assert employeeRole.equals("ROLE_EMPLOYEE");
+        assert !userRole.equals(employeeRole);
+    }
+    
+    // ==================== TOKEN TIMING ====================
+    
+    @Test
+    public void testTokenExpirationTimeIsCorrectlySet() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        long beforeRequest = System.currentTimeMillis();
+
+        String responseBody = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        long expiresAt = jwtUtil.getExpiresAt(token);
+        
+        // Token should expire in approximately 1 hour from request time
+        long expectedExpiration = beforeRequest + (60 * 60 * 1000);
+        long variance = Math.abs(expiresAt - expectedExpiration);
+        
+        // Allow 5 second variance
+        assert variance <= 5000;
+    }
+    
+    @Test
+    public void testMultipleAuthRequests_GenerateUniqueTokens() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        String firstResponse = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        // Add delay to ensure different issuedAt timestamp (JWT uses seconds, not milliseconds)
+        Thread.sleep(1100);
+        
+        String secondResponse = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String firstToken = objectMapper.readTree(firstResponse).get("data").get("token").asText();
+        String secondToken = objectMapper.readTree(secondResponse).get("data").get("token").asText();
+        
+        // Tokens should be different due to different issuedAt times
+        assert !firstToken.equals(secondToken);
+    }
+    
+    // ==================== TOKEN VALIDATION ====================
+    
+    @Test
+    public void testGeneratedToken_IsValidAndCanBeVerified() throws Exception {
+        AuthRequestDTO validAuth = new AuthRequestDTO("admin@example.com", "admin123");
+        
+        String responseBody = mockMvc.perform(post("/api/auth")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validAuth)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        
+        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        
+        // Token should be valid
+        boolean isValid = jwtUtil.validateAccessToken(token);
+        assert isValid;
     }
 }

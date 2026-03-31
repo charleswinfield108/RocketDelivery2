@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiAddressDTO;
 import com.rocketFoodDelivery.rocketFood.models.Address;
 import com.rocketFoodDelivery.rocketFood.repository.AddressRepository;
-import com.rocketFoodDelivery.rocketFood.service.AddressService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@SuppressWarnings("all")
+@SuppressWarnings("null")
 public class AddressControllerTest {
 
     @Autowired
@@ -34,9 +33,6 @@ public class AddressControllerTest {
 
     @Autowired
     private AddressRepository addressRepository;
-
-    @Autowired
-    private AddressService addressService;
 
     // ====== VALID DATA TESTS ======
 
@@ -66,8 +62,7 @@ public class AddressControllerTest {
                 .andExpect(jsonPath("$.data.id").isNumber())
                 .andExpect(jsonPath("$.data.streetAddress").value("123 Main Street"))
                 .andExpect(jsonPath("$.data.city").value("New York"))
-                .andExpect(jsonPath("$.data.postalCode").value("10001"))
-                .andReturn();
+                .andExpect(jsonPath("$.data.postalCode").value("10001"));
     }
 
     /**

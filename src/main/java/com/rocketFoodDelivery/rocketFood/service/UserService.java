@@ -43,7 +43,7 @@ public class UserService {
         }
     }
 
-    @SuppressWarnings("all")
+    @SuppressWarnings("null")
     public UserEntity saveUser(UserEntity user){
         UserEntity savedUser = (UserEntity) userRepository.save(user);
         return savedUser != null ? savedUser : user;

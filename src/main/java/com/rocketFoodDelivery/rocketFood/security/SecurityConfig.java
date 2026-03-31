@@ -74,6 +74,7 @@ public class SecurityConfig {
 
 
     @Bean
+    @SuppressWarnings("deprecation")
     public PasswordEncoder getPasswordEncoder(){
         return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
     }
