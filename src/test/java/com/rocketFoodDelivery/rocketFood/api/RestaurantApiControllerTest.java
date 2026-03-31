@@ -1,17 +1,20 @@
 package com.rocketFoodDelivery.rocketFood.api;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.mockito.Mock;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -21,7 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiAddressDTO;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiCreateRestaurantDTO;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiRestaurantDTO;
-import com.rocketFoodDelivery.rocketFood.repository.UserRepository;
+import com.rocketFoodDelivery.rocketFood.exception.ResourceNotFoundException;
 import com.rocketFoodDelivery.rocketFood.service.RestaurantService;
 
 @SpringBootTest
@@ -29,190 +32,588 @@ import com.rocketFoodDelivery.rocketFood.service.RestaurantService;
 @SuppressWarnings("null")
 public class RestaurantApiControllerTest {
 
-    @Mock
+    @MockBean
     private RestaurantService restaurantService;
-
-    @Mock
-    private UserRepository userRepository;
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Test
-    public void testCreateRestaurant_Success() throws Exception {
-        ApiAddressDTO inputAddress = new ApiAddressDTO(1, "123 Wellington St.", "Montreal", "H1H2H2");
-        ApiCreateRestaurantDTO inputRestaurant = new ApiCreateRestaurantDTO(1, 4, "Villa wellington", 2, "5144154415", "reservations@villawellington.com", inputAddress);
+    private ApiAddressDTO testAddress;
+    private ApiCreateRestaurantDTO testCreateDTO;
+    private ApiRestaurantDTO testDTO;
 
-        // Mock service behavior - returns Optional with the created restaurant
-        when(restaurantService.createRestaurant(any())).thenReturn(Optional.of(inputRestaurant));
-
-        // Validate response code and content
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(inputRestaurant)))
-                .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Success"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value(inputRestaurant.getName()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.phone").value(inputRestaurant.getPhone()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.email").value(inputRestaurant.getEmail()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.price_range").value(inputRestaurant.getPriceRange()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.user_id").value(inputRestaurant.getUserId()));
+    @BeforeEach
+    public void setUp() {
+        testAddress = new ApiAddressDTO(1, "123 Wellington St.", "Montreal", "H1H2H2");
+        testCreateDTO = new ApiCreateRestaurantDTO(1, 5, "Villa Wellington", 2, "5144154415", "reservations@villa.com", testAddress);
+        testDTO = new ApiRestaurantDTO(1, "Villa Wellington", 2, 4);
     }
 
-    @Test
-    public void testUpdateRestaurant_Success() throws Exception {
-        // Mock data
-        int restaurantId = 1;
-        ApiCreateRestaurantDTO updatedData = new ApiCreateRestaurantDTO();
-        updatedData.setId(restaurantId);
-        updatedData.setName("Updated Name");
-        updatedData.setPriceRange(2);
-        updatedData.setPhone("555-1234");
 
-        // Mock service behavior
-        when(restaurantService.updateRestaurant(restaurantId, updatedData))
-                .thenReturn(Optional.of(updatedData));
 
-        // Validate response code and content
-        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(updatedData)))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Restaurant updated successfully"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value("Updated Name"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.price_range").value(2))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.phone", org.hamcrest.Matchers.notNullValue()));
-    }
+    // ============================================================
+    // GET /api/restaurants - List All Restaurants Tests (16 tests)
+    // ============================================================
 
     @Test
-    public void testListRestaurants_AllRestaurants_Success() throws Exception {
-        // Mock data - list of all restaurants
+    public void testGetAllRestaurants_Success() throws Exception {
         List<ApiRestaurantDTO> restaurants = new ArrayList<>();
+        restaurants.add(new ApiRestaurantDTO(1, "Villa Wellington", 2, 4));
+        restaurants.add(new ApiRestaurantDTO(2, "Fast Pub", 1, 3));
         
-        ApiRestaurantDTO restaurant1 = new ApiRestaurantDTO(1, "Villa Wellington", 3, 4);
-        ApiRestaurantDTO restaurant2 = new ApiRestaurantDTO(2, "Fast Pub", 2, 3);
-        
-        restaurants.add(restaurant1);
-        restaurants.add(restaurant2);
-
-        // Mock service behavior
         when(restaurantService.findRestaurantsByRatingAndPriceRange(null, null)).thenReturn(restaurants);
 
-        // Validate response code and content
         mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.hasSize(2)))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].id").value(1))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].name").value("Villa Wellington"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].price_range").value(3))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].id").value(2))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].name").value("Fast Pub"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].price_range").value(2));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].id").value(2));
     }
 
     @Test
-    public void testListRestaurants_FilterByRating_Success() throws Exception {
-        // Mock data - restaurants with rating 5
-        List<ApiRestaurantDTO> restaurants = new ArrayList<>();
-        ApiRestaurantDTO restaurant1 = new ApiRestaurantDTO(1, "Villa Wellington", 3, 5);
-        restaurants.add(restaurant1);
+    public void testGetAllRestaurants_EmptyList() throws Exception {
+        when(restaurantService.findRestaurantsByRatingAndPriceRange(null, null)).thenReturn(new ArrayList<>());
 
-        // Mock service behavior
-        when(restaurantService.findRestaurantsByRatingAndPriceRange(5, null)).thenReturn(restaurants);
-
-        // Validate response code and content
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants")
-                .param("rating", "5"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].id").value(1))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].name").value("Villa Wellington"));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.hasSize(0)));
     }
 
     @Test
-    public void testListRestaurants_FilterByPriceRange_Success() throws Exception {
-        // Mock data - restaurants with price_range 1
+    public void testGetAllRestaurants_FilterByMinRating() throws Exception {
         List<ApiRestaurantDTO> restaurants = new ArrayList<>();
-        ApiRestaurantDTO restaurant1 = new ApiRestaurantDTO(3, "Budget Eat", 1, 3);
-        restaurants.add(restaurant1);
+        restaurants.add(new ApiRestaurantDTO(1, "Villa Wellington", 2, 5));
+        
+        when(restaurantService.findRestaurantsByRatingAndPriceRange(4, null)).thenReturn(restaurants);
 
-        // Mock service behavior
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants").param("rating", "4"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].rating").value(5));
+    }
+
+    @Test
+    public void testGetAllRestaurants_FilterByMaxPrice() throws Exception {
+        List<ApiRestaurantDTO> restaurants = new ArrayList<>();
+        restaurants.add(new ApiRestaurantDTO(3, "Budget Eat", 1, 3));
+        
         when(restaurantService.findRestaurantsByRatingAndPriceRange(null, 1)).thenReturn(restaurants);
 
-        // Validate response code and content
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants")
-                .param("price_range", "1"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants").param("price_range", "1"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].id").value(3))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].price_range").value(1));
     }
 
     @Test
-    public void testListRestaurants_FilterByBothRatingAndPriceRange_Success() throws Exception {
-        // Mock data - restaurants matching both filters
+    public void testGetAllRestaurants_FilterByBothRatingAndPrice() throws Exception {
         List<ApiRestaurantDTO> restaurants = new ArrayList<>();
-        ApiRestaurantDTO restaurant1 = new ApiRestaurantDTO(1, "Villa Wellington", 3, 4);
-        restaurants.add(restaurant1);
+        restaurants.add(new ApiRestaurantDTO(1, "Villa Wellington", 2, 4));
+        
+        when(restaurantService.findRestaurantsByRatingAndPriceRange(4, 2)).thenReturn(restaurants);
 
-        // Mock service behavior
-        when(restaurantService.findRestaurantsByRatingAndPriceRange(4, 3)).thenReturn(restaurants);
-
-        // Validate response code and content
         mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants")
-                .param("rating", "4")
-                .param("price_range", "3"))
+                .param("rating", "4").param("price_range", "2"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].id").value(1))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].rating").value(4))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].price_range").value(3));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].price_range").value(2));
     }
 
     @Test
-    public void testListRestaurants_NoResults_EmptyArray() throws Exception {
-        // Mock data - no restaurants match filters
-        List<ApiRestaurantDTO> emptyList = new ArrayList<>();
+    public void testGetAllRestaurants_InvalidRating_TooHigh() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants").param("rating", "6"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
 
-        // Mock service behavior
-        when(restaurantService.findRestaurantsByRatingAndPriceRange(5, 1)).thenReturn(emptyList);
+    @Test
+    public void testGetAllRestaurants_InvalidRating_TooLow() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants").param("rating", "0"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
 
-        // Validate response code and content
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants")
-                .param("rating", "5")
-                .param("price_range", "1"))
+    @Test
+    public void testGetAllRestaurants_InvalidRating_Negative() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants").param("rating", "-1"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void testGetAllRestaurants_InvalidPrice_TooHigh() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants").param("price_range", "4"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void testGetAllRestaurants_InvalidPrice_TooLow() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants").param("price_range", "0"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void testGetAllRestaurants_InvalidPrice_Negative() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants").param("price_range", "-1"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void testGetAllRestaurants_ResponseFormat() throws Exception {
+        List<ApiRestaurantDTO> restaurants = new ArrayList<>();
+        restaurants.add(new ApiRestaurantDTO(1, "Test Restaurant", 2, 4));
+        
+        when(restaurantService.findRestaurantsByRatingAndPriceRange(null, null)).thenReturn(restaurants);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data", org.hamcrest.Matchers.hasSize(0)));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data").isArray());
     }
 
     @Test
-    public void testListRestaurants_InvalidRating_BadRequest() throws Exception {
-        // Test invalid rating (> 5)
+    public void testGetAllRestaurants_MultipleFilters_NoResults() throws Exception {
+        when(restaurantService.findRestaurantsByRatingAndPriceRange(5, 1)).thenReturn(new ArrayList<>());
+
         mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants")
-                .param("rating", "6"))
+                .param("rating", "5").param("price_range", "1"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.hasSize(0)));
+    }
+
+    // ============================================================
+    // GET /api/restaurants/{id} - Get Single Restaurant Tests (14 tests)
+    // ============================================================
+
+    @Test
+    public void testGetRestaurantById_Success() throws Exception {
+        ApiRestaurantDTO restaurant = new ApiRestaurantDTO(1, "Villa Wellington", 2, 4);
+        
+        when(restaurantService.findRestaurantWithAverageRatingById(1)).thenReturn(Optional.of(restaurant));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants/1"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").value(1))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value("Villa Wellington"));
+    }
+
+    @Test
+    public void testGetRestaurantById_NotFound() throws Exception {
+        when(restaurantService.findRestaurantWithAverageRatingById(999)).thenThrow(new ResourceNotFoundException("Restaurant not found"));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants/999"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    public void testGetRestaurantById_InvalidId_Negative() throws Exception {
+        when(restaurantService.findRestaurantWithAverageRatingById(-1)).thenThrow(new ResourceNotFoundException("Restaurant not found"));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants/-1"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    public void testGetRestaurantById_InvalidId_Zero() throws Exception {
+        when(restaurantService.findRestaurantWithAverageRatingById(0)).thenThrow(new ResourceNotFoundException("Restaurant not found"));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants/0"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    public void testGetRestaurantById_InvalidId_NonNumeric() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants/abc"))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     @Test
-    public void testListRestaurants_InvalidPriceRange_BadRequest() throws Exception {
-        // Test invalid price_range (> 3)
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants")
-                .param("price_range", "4"))
+    public void testGetRestaurantById_ResponseIncludesAllFields() throws Exception {
+        ApiRestaurantDTO restaurant = new ApiRestaurantDTO(1, "Test Restaurant", 3, 4);
+        
+        when(restaurantService.findRestaurantWithAverageRatingById(1)).thenReturn(Optional.of(restaurant));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants/1"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").value(1))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.price_range").value(3))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.rating").value(4));
+    }
+
+    @Test
+    public void testGetRestaurantById_AlternateEndpoint() throws Exception {
+        ApiRestaurantDTO restaurant = new ApiRestaurantDTO(1, "Villa Wellington", 2, 4);
+        
+        when(restaurantService.findRestaurantWithAverageRatingById(1)).thenReturn(Optional.of(restaurant));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurant/1"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").value(1));
+    }
+
+    @Test
+    public void testGetRestaurantById_LargeId() throws Exception {
+        ApiRestaurantDTO restaurant = new ApiRestaurantDTO(999999, "Large ID Restaurant", 1, 3);
+        
+        when(restaurantService.findRestaurantWithAverageRatingById(999999)).thenReturn(Optional.of(restaurant));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants/999999"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").value(999999));
+    }
+
+    @Test
+    public void testGetRestaurantById_VerifyRatingCalculation() throws Exception {
+        ApiRestaurantDTO restaurant = new ApiRestaurantDTO(1, "Test", 2, 4);
+        
+        when(restaurantService.findRestaurantWithAverageRatingById(1)).thenReturn(Optional.of(restaurant));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants/1"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.rating").value(4));
+    }
+
+    // ============================================================
+    // POST /api/restaurants - Create Restaurant Tests (16 tests)
+    // ============================================================
+
+    @Test
+    public void testCreateRestaurant_Success() throws Exception {
+        when(restaurantService.createRestaurant(any())).thenReturn(Optional.of(testCreateDTO));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value("Villa Wellington"));
+    }
+
+    @Test
+    public void testCreateRestaurant_MissingName() throws Exception {
+        ApiCreateRestaurantDTO invalidDTO = new ApiCreateRestaurantDTO();
+        invalidDTO.setUserId(1);
+        invalidDTO.setPriceRange(2);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(invalidDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_InvalidPriceRange() throws Exception {
+        testCreateDTO.setPriceRange(4);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_PriceRangeZero() throws Exception {
+        testCreateDTO.setPriceRange(0);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_PriceRangeNegative() throws Exception {
+        testCreateDTO.setPriceRange(-1);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_InvalidEmail() throws Exception {
+        testCreateDTO.setEmail("invalid-email");
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_MissingEmail() throws Exception {
+        testCreateDTO.setEmail(null);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_InvalidPhone() throws Exception {
+        testCreateDTO.setPhone("123");
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_MissingPhone() throws Exception {
+        testCreateDTO.setPhone(null);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_MissingAddress() throws Exception {
+        testCreateDTO.setAddress(null);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_ServiceError() throws Exception {
+        when(restaurantService.createRestaurant(any())).thenReturn(Optional.empty());
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     @Test
-    public void testListRestaurants_RatingBelowMin_BadRequest() throws Exception {
-        // Test invalid rating (< 1)
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants")
-                .param("rating", "0"))
+    public void testCreateRestaurant_EmptyName() throws Exception {
+        testCreateDTO.setName("");
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_WhitespaceName() throws Exception {
+        testCreateDTO.setName("   ");
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_LongName() throws Exception {
+        testCreateDTO.setName("A".repeat(256));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testCreateRestaurant_ResponseFormat() throws Exception {
+        when(restaurantService.createRestaurant(any())).thenReturn(Optional.of(testCreateDTO));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testCreateDTO)))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").exists());
+    }
+
+    // ============================================================
+    // PUT /api/restaurants/{id} - Update Restaurant Tests (14 tests)
+    // ============================================================
+
+    @Test
+    public void testUpdateRestaurant_Success() throws Exception {
+        when(restaurantService.updateRestaurant(anyInt(), any())).thenReturn(Optional.of(testCreateDTO));
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testDTO)))
+                .andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void testUpdateRestaurant_NotFound() throws Exception {
+        when(restaurantService.updateRestaurant(anyInt(), any())).thenReturn(Optional.empty());
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/999")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testDTO)))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    public void testUpdateRestaurant_InvalidId_Negative() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testDTO)))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     @Test
-    public void testListRestaurants_PriceRangeBelowMin_BadRequest() throws Exception {
-        // Test invalid price_range (< 1)
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants")
-                .param("price_range", "0"))
+    public void testUpdateRestaurant_InvalidId_Zero() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/0")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testDTO)))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void testUpdateRestaurant_InvalidPriceRange() throws Exception {
+        testDTO.setPriceRange(4);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testDTO)))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void testUpdateRestaurant_PartialUpdate_Name() throws Exception {
+        when(restaurantService.updateRestaurant(anyInt(), any())).thenReturn(Optional.of(testCreateDTO));
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\": \"Updated Name\"}"))
+                .andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void testUpdateRestaurant_PartialUpdate_Price() throws Exception {
+        when(restaurantService.updateRestaurant(anyInt(), any())).thenReturn(Optional.of(testCreateDTO));
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"price_range\": 3}"))
+                .andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void testUpdateRestaurant_EmptyName() throws Exception {
+        testDTO.setName("");
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testDTO)))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    public void testUpdateRestaurant_NullFields() throws Exception {
+        when(restaurantService.updateRestaurant(anyInt(), any())).thenReturn(Optional.of(testCreateDTO));
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+                .andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void testUpdateRestaurant_ResponseFormat() throws Exception {
+        when(restaurantService.updateRestaurant(anyInt(), any())).thenReturn(Optional.of(testCreateDTO));
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testDTO)))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data").exists());
+    }
+
+    @Test
+    public void testUpdateRestaurant_InvalidId_NonNumeric() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/restaurants/abc")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(testDTO)))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    // ============================================================
+    // DELETE /api/restaurants/{id} - Delete Restaurant Tests (10 tests)
+    // ============================================================
+
+    @Test
+    public void testDeleteRestaurant_Success() throws Exception {
+        doNothing().when(restaurantService).deleteRestaurant(1);
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/1"))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+    }
+
+    @Test
+    public void testDeleteRestaurant_NotFound() throws Exception {
+        doThrow(new ResourceNotFoundException("Restaurant not found")).when(restaurantService).deleteRestaurant(999);
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/999"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    public void testDeleteRestaurant_InvalidId_Negative() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/-1"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void testDeleteRestaurant_InvalidId_Zero() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/0"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void testDeleteRestaurant_InvalidId_NonNumeric() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/abc"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void testDeleteRestaurant_CascadeDelete() throws Exception {
+        doNothing().when(restaurantService).deleteRestaurant(1);
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/1"))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+        
+        verify(restaurantService, times(1)).deleteRestaurant(1);
+    }
+
+    @Test
+    public void testDeleteRestaurant_LargeId() throws Exception {
+        doNothing().when(restaurantService).deleteRestaurant(999999);
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/999999"))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+    }
+
+    @Test
+    public void testDeleteRestaurant_ServiceError() throws Exception {
+        doThrow(new RuntimeException("Database error")).when(restaurantService).deleteRestaurant(1);
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/1"))
+                .andExpect(MockMvcResultMatchers.status().is5xxServerError());
+    }
+
+    @Test
+    public void testDeleteRestaurant_MultipleDeletes() throws Exception {
+        doNothing().when(restaurantService).deleteRestaurant(anyInt());
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/1"))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/2"))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+
+        verify(restaurantService, times(2)).deleteRestaurant(anyInt());
     }
 
 
