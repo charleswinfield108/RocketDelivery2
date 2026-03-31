@@ -1,5 +1,6 @@
 package com.rocketFoodDelivery.rocketFood.controller.api;
 
+import com.rocketFoodDelivery.rocketFood.dtos.ApiCreateOrderRequestDTO;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiOrderDTO;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiResponseDTO;
 import com.rocketFoodDelivery.rocketFood.exception.ResourceNotFoundException;
@@ -96,6 +97,43 @@ public class OrdersApiController {
             log.warn("GET /api/orders - {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ResponseBuilder.error(e.getMessage(), "NOT_FOUND"));
+        }
+    }
+
+    /**
+     * Creates a new order with the provided request data.
+     * 
+     * Validates customer, restaurant, products, and total price.
+     * Creates ProductOrder junction records for each product.
+     * Sets order status to PENDING by default.
+     * 
+     * @param request the order creation request
+     * @return ResponseEntity with 201 Created status and ApiOrderDTO with created order details
+     */
+    @PostMapping("/orders")
+    @PreAuthorize("permitAll")
+    public ResponseEntity<ApiResponseDTO> createOrder(@RequestBody ApiCreateOrderRequestDTO request) {
+        log.debug("POST /api/orders - customer_id: {}, restaurant_id: {}, products size: {}",
+                request.getCustomer_id(), request.getRestaurant_id(), 
+                request.getProducts() != null ? request.getProducts().size() : 0);
+        
+        try {
+            ApiOrderDTO createdOrder = orderService.createOrder(request);
+            log.info("POST /api/orders - Order created successfully with id: {}", createdOrder.getId());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ResponseBuilder.success(createdOrder, "Order created successfully"));
+        } catch (ResourceNotFoundException e) {
+            log.warn("POST /api/orders - Resource not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseBuilder.error(e.getMessage(), "NOT_FOUND"));
+        } catch (IllegalArgumentException e) {
+            log.warn("POST /api/orders - Validation error: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error(e.getMessage(), "BAD_REQUEST"));
+        } catch (IllegalStateException e) {
+            log.error("POST /api/orders - System error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseBuilder.error(e.getMessage(), "INTERNAL_ERROR"));
         }
     }
     
