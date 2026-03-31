@@ -45,7 +45,8 @@ public class UserService {
 
     @SuppressWarnings("null")
     public UserEntity saveUser(UserEntity user){
-        return userRepository.save(user);
+        UserEntity savedUser = (UserEntity) userRepository.save(user);
+        return savedUser != null ? savedUser : user;
     }
     
     public void delete(int id) {

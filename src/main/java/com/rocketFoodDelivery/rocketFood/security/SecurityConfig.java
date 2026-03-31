@@ -1,6 +1,7 @@
 package com.rocketFoodDelivery.rocketFood.security;
 
 import com.rocketFoodDelivery.rocketFood.repository.UserRepository;
+import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +14,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -51,6 +51,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth").permitAll()
                 .requestMatchers("/api/address").permitAll()
+                .requestMatchers("/api/restaurants").permitAll()
+                .requestMatchers("/api/restaurants/**").permitAll()
+                .requestMatchers("/api/restaurant/**").permitAll()
+                .requestMatchers("/api/orders").permitAll()
+                .requestMatchers("/api/order/**").permitAll()
+                .requestMatchers("/api/products").permitAll()
                 .requestMatchers("/backoffice/**").permitAll()
                 .anyRequest().authenticated()
             )
@@ -61,7 +67,7 @@ public class SecurityConfig {
                     )
                 )
             )
-            .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore((Filter) jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -70,7 +76,7 @@ public class SecurityConfig {
     @Bean
     @SuppressWarnings("deprecation")
     public PasswordEncoder getPasswordEncoder(){
-        return NoOpPasswordEncoder.getInstance();
+        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
     }
 }
 

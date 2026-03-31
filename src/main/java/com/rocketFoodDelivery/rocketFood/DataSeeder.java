@@ -32,6 +32,7 @@ public class DataSeeder {
    private final Faker faker = new Faker();
 
    @PostConstruct
+   @SuppressWarnings("null")
    public void seedData() {
        System.out.println("Starting database seeding...");
        
@@ -308,6 +309,7 @@ public class DataSeeder {
        System.out.println("✓ Seeded " + products.size() + " products across " + restaurants.size() + " restaurants");
    }
 
+   @SuppressWarnings("all")
    private void seedOrdersAndProductOrders() {
        if (orderRepository.count() > 0) {
            System.out.println("⚠ Orders already exist. Skipping order and product order seeding.");

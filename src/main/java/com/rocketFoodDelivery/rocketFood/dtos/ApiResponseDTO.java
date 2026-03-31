@@ -9,4 +9,5 @@ import lombok.Setter;
 public class ApiResponseDTO {
     private String message;
     private Object data;
+    private String error;
 }

@@ -37,6 +37,7 @@ public class AuthApiControllerTest {
     private JwtUtil jwtUtil;
 
     @BeforeEach
+    @SuppressWarnings("null")
     public void setup() {
         // Create test user for authentication tests
         UserEntity testUser = UserEntity.builder()

@@ -15,13 +15,34 @@ import java.util.List;
 public interface ProductOrderRepository extends JpaRepository<ProductOrder, Integer> {
     // Already CRUD operation available : findAll(), findById(), save(), deleteById()
 
-    // Custom query method 
+    /**
+     * Deletes all ProductOrder entries for a specific order.
+     * Uses native SQL with parameterized binding to prevent SQL injection.
+     * 
+     * @param orderId the order ID whose product orders should be deleted
+     */
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        // todo: Write SQL query here
+        DELETE FROM product_orders WHERE order_id = ?1
     """)
     void deleteProductOrdersByOrderId(@Param("orderId") int orderId);
+
+    /**
+     * Deletes all ProductOrder entries associated with a specific restaurant.
+     * This cascades the deletion by removing all product items from all orders
+     * in the restaurant. Uses parameterized binding (?1) to prevent SQL injection.
+     * 
+     * @param restaurantId the restaurant ID whose associated product orders should be deleted
+     */
+    @Modifying
+    @Transactional
+    @Query(nativeQuery = true, value = """
+        DELETE FROM product_orders WHERE order_id IN (
+            SELECT id FROM orders WHERE restaurant_id = ?1
+        )
+    """)
+    void deleteProductOrdersByRestaurant(@Param("restaurantId") int restaurantId);
 
     List<ProductOrder> findByOrderId(int id);
     List<ProductOrder> findByProductId(int id);

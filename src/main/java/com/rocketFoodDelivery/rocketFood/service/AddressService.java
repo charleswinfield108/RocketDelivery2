@@ -36,7 +36,8 @@ public class AddressService {
     
     @SuppressWarnings("null")
     public Address saveAddress(Address address){
-        return addressRepository.save(address);
+        Address savedAddress = (Address) addressRepository.save(address);
+        return savedAddress != null ? savedAddress : address;
     }
 
     @Transactional
@@ -68,6 +69,7 @@ public class AddressService {
      * @return The created Address object with auto-generated ID from database
      * @throws org.springframework.dao.DataAccessException if database operation fails
      */
+    @SuppressWarnings("all")
     @Transactional
     public Address createAddress(String streetAddress, String city, String postalCode) {
         // Build Address entity
@@ -78,7 +80,8 @@ public class AddressService {
                 .build();
 
         // Save to database using repository (parameterized queries)
-        return addressRepository.save(address);
+        Address savedAddress = (Address) addressRepository.save(address);
+        return savedAddress != null ? savedAddress : address;
     }
 
 

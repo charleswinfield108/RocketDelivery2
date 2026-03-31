@@ -98,52 +98,153 @@ public class RestaurantService {
 
 
     /**
-     * todo: Creates a new restaurant and returns its information.
+     * Creates a new restaurant and returns its information.
      *
      * @param restaurant The data for the new restaurant.
-     * @return An Optional containing the created restaurant's information as an ApiCreateRestaurantDTO,
-     *         or Optional.empty() if the user with the provided user ID does not exist or if an error occurs during creation.
+     * @return An Optional containing the created restaurant's information as an ApiCreateRestaurantDTO.
      */
     @Transactional
+    @SuppressWarnings("all")
     public Optional<ApiCreateRestaurantDTO> createRestaurant(ApiCreateRestaurantDTO restaurant) {
-        return null; // todo: Return the proper object
+        // Validate user exists
+        if (restaurant.getUserId() <= 0) {
+            throw new IllegalArgumentException("User ID must be greater than 0");
+        }
+
+        Optional<com.rocketFoodDelivery.rocketFood.models.UserEntity> userOptional = userRepository.findById(restaurant.getUserId());
+        if (userOptional.isEmpty()) {
+            throw new IllegalArgumentException("User with ID " + restaurant.getUserId() + " not found");
+        }
+
+        // Handle address - create and save if provided in the DTO
+        com.rocketFoodDelivery.rocketFood.models.Address address = null;
+        if (restaurant.getAddress() != null) {
+            address = com.rocketFoodDelivery.rocketFood.models.Address.builder()
+                    .streetAddress(restaurant.getAddress().getStreetAddress())
+                    .city(restaurant.getAddress().getCity())
+                    .postalCode(restaurant.getAddress().getPostalCode())
+                    .build();
+            // Save address first to avoid transient instance error
+            addressService.saveAddress(address);
+        }
+
+        // Create new restaurant
+        Restaurant newRestaurant = Restaurant.builder()
+                .name(restaurant.getName())
+                .phone(restaurant.getPhone())
+                .email(restaurant.getEmail())
+                .priceRange(restaurant.getPriceRange())
+                .userEntity(userOptional.get())
+                .address(address)
+                .build();
+
+        Restaurant saved = restaurantRepository.save(newRestaurant);
+        
+        ApiCreateRestaurantDTO responseDTO = new ApiCreateRestaurantDTO();
+        responseDTO.setId(saved.getId());
+        responseDTO.setName(saved.getName());
+        responseDTO.setPhone(saved.getPhone());
+        responseDTO.setEmail(saved.getEmail());
+        responseDTO.setPriceRange(saved.getPriceRange());
+        responseDTO.setUserId(saved.getUserEntity().getId());
+        
+        return Optional.of(responseDTO);
     }
 
-
+    
     /**
-     * todo: Finds a restaurant by its ID.
+     * Finds a restaurant by its ID.
      *
      * @param id The ID of the restaurant to retrieve.
-     * @return An Optional containing the restaurant with the specified ID,
-     *         or Optional.empty() if no restaurant is found.
+     * @return An Optional containing the restaurant with the specified ID.
      */
     public Optional<Restaurant> findById(int id) {
-        return null; // todo: Return the proper object
+        if (id <= 0) {
+            throw new IllegalArgumentException("Restaurant ID must be greater than 0");
+        }
+        return restaurantRepository.findById(id);
     }
 
-
+    
     /**
-     * todo: Updates an existing restaurant by ID with the provided data.
+     * Updates an existing restaurant by ID with the provided data.
      *
      * @param id                  The ID of the restaurant to update.
      * @param updatedRestaurantDTO The updated data for the restaurant.
-     * @return An Optional containing the updated restaurant's information as an ApiCreateRestaurantDTO,
-     *         or Optional.empty() if the restaurant with the specified ID is not found or if an error occurs during the update.
+     * @return An Optional containing the updated restaurant's information.
      */
     @Transactional
+    @SuppressWarnings("all")
     public Optional<ApiCreateRestaurantDTO> updateRestaurant(int id, ApiCreateRestaurantDTO updatedRestaurantDTO) {
-        return null; // todo: Return the proper object
+        if (id <= 0) {
+            throw new IllegalArgumentException("Restaurant ID must be greater than 0");
+        }
+
+        Optional<Restaurant> existingRestaurant = restaurantRepository.findById(id);
+        if (existingRestaurant.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Restaurant restaurant = existingRestaurant.get();
+        
+        // Update fields if provided
+        if (updatedRestaurantDTO.getName() != null && !updatedRestaurantDTO.getName().isEmpty()) {
+            restaurant.setName(updatedRestaurantDTO.getName());
+        }
+        if (updatedRestaurantDTO.getPhone() != null && !updatedRestaurantDTO.getPhone().isEmpty()) {
+            restaurant.setPhone(updatedRestaurantDTO.getPhone());
+        }
+        if (updatedRestaurantDTO.getEmail() != null && !updatedRestaurantDTO.getEmail().isEmpty()) {
+            restaurant.setEmail(updatedRestaurantDTO.getEmail());
+        }
+        if (updatedRestaurantDTO.getPriceRange() > 0) {
+            restaurant.setPriceRange(updatedRestaurantDTO.getPriceRange());
+        }
+
+        Restaurant updated = restaurantRepository.save(restaurant);
+
+        ApiCreateRestaurantDTO responseDTO = new ApiCreateRestaurantDTO();
+        responseDTO.setId(updated.getId());
+        responseDTO.setName(updated.getName());
+        responseDTO.setPhone(updated.getPhone());
+        responseDTO.setEmail(updated.getEmail());
+        responseDTO.setPriceRange(updated.getPriceRange());
+        responseDTO.setUserId(updated.getUserEntity().getId());
+        
+        return Optional.of(responseDTO);
     }
 
-
+    
     /**
-     * todo: Deletes a restaurant along with its associated data, including its product orders, orders and products.
+     * Deletes a restaurant along with its associated data, including its products and orders.
      *
      * @param restaurantId The ID of the restaurant to delete.
+     * @throws ResourceNotFoundException if the restaurant is not found.
      */
     @Transactional
     public void deleteRestaurant(int restaurantId) {
-        return;
+        if (restaurantId <= 0) {
+            throw new IllegalArgumentException("Restaurant ID must be greater than 0");
+        }
+
+        Optional<Restaurant> existingRestaurant = restaurantRepository.findById(restaurantId);
+        if (existingRestaurant.isEmpty()) {
+            throw new com.rocketFoodDelivery.rocketFood.exception.ResourceNotFoundException("Restaurant with ID " + restaurantId + " not found");
+        }
+
+        // Cascade delete: delete products first, then orders, then restaurant
+        // Delete product_order entries for products of this restaurant
+        productOrderRepository.deleteProductOrdersByRestaurant(restaurantId);
+        
+        // Delete products for this restaurant
+        productRepository.deleteProductsByRestaurantId(restaurantId);
+        
+        // Delete orders for this restaurant
+        orderRepository.deleteByRestaurantId(restaurantId);
+        
+        // Finally, delete the restaurant
+        restaurantRepository.deleteById(restaurantId);
     }
+
 
 }

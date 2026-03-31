@@ -10,8 +10,14 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository <UserEntity, Integer> {
     // Already CRUD operation available : findAll(), findById(), save(), deleteById()
+    /**
+     * Finds a user by ID using native SQL.
+     * 
+     * @param id the user ID to find
+     * @return Optional containing the user if found, empty otherwise
+     */
     @Query(nativeQuery = true, value = """
-        // todo: Write SQL query here
+        SELECT id, email, password, name FROM users WHERE id = ?1
     """)
     Optional<UserEntity> findById(int id);
     
