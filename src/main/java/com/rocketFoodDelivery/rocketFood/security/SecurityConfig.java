@@ -50,6 +50,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth").permitAll()
+                .requestMatchers("/api/address").permitAll()
                 .requestMatchers("/backoffice/**").permitAll()
                 .anyRequest().authenticated()
             )
@@ -67,6 +68,7 @@ public class SecurityConfig {
 
 
     @Bean
+    @SuppressWarnings("deprecation")
     public PasswordEncoder getPasswordEncoder(){
         return NoOpPasswordEncoder.getInstance();
     }

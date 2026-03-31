@@ -7,9 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ProductOrderRepository extends JpaRepository<ProductOrder, Integer> {
@@ -27,5 +27,5 @@ public interface ProductOrderRepository extends JpaRepository<ProductOrder, Inte
     List<ProductOrder> findByProductId(int id);
 
     @Override
-    void deleteById(Integer productOrderId);
+    void deleteById(@NonNull Integer productOrderId);
 }

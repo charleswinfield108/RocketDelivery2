@@ -25,6 +25,7 @@ import com.rocketFoodDelivery.rocketFood.service.RestaurantService;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
+@SuppressWarnings("null")
 public class RestaurantApiControllerTest {
 
     @InjectMocks

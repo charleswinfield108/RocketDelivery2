@@ -43,6 +43,7 @@ public class UserService {
         }
     }
 
+    @SuppressWarnings("null")
     public UserEntity saveUser(UserEntity user){
         return userRepository.save(user);
     }
