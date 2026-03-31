@@ -1,6 +1,8 @@
 package com.rocketFoodDelivery.rocketFood.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,6 +19,8 @@ public class ApiRestaurantDTO {
     String name;
 
     @JsonProperty("price_range")
+    @Min(1)
+    @Max(3)
     int priceRange;
 
     int rating;

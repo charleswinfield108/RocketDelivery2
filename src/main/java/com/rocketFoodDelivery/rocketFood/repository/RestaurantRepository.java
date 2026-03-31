@@ -61,24 +61,53 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Integer>
     List<Object[]> findRestaurantsByRatingAndPriceRange(@Param("rating") Integer rating, @Param("priceRange") Integer priceRange);
 
 
+    /**
+     * Saves a new restaurant with the provided details using native SQL INSERT.
+     * 
+     * @param userId the user ID who owns the restaurant
+     * @param addressId the address ID for the restaurant
+     * @param name the restaurant name
+     * @param priceRange the price range (1-3)
+     * @param phone the phone number
+     * @param email the email address
+     */
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        // todo: Write SQL query here
+        INSERT INTO restaurants (user_id, address_id, name, price_range, phone, email)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6)
     """)
     void saveRestaurant(long userId, long addressId, String name, int priceRange, String phone, String email);
 
 
+    /**
+     * Updates an existing restaurant with new details using native SQL UPDATE.
+     * 
+     * @param restaurantId the restaurant ID to update
+     * @param name the new restaurant name
+     * @param priceRange the new price range (1-3)
+     * @param phone the new phone number
+     */
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        // todo: Write SQL query here
+        UPDATE restaurants 
+        SET name = ?2, price_range = ?3, phone = ?4
+        WHERE id = ?1
     """)
     void updateRestaurant(int restaurantId, String name, int priceRange, String phone);
 
 
+    /**
+     * Finds a restaurant by ID using native SQL.
+     * 
+     * @param restaurantId the restaurant ID to find
+     * @return Optional containing the restaurant if found, empty otherwise
+     */
     @Query(nativeQuery = true, value = """
-        // todo: Write SQL query here
+        SELECT r.id, r.user_id, r.address_id, r.name, r.price_range, r.phone, r.email
+        FROM restaurants r
+        WHERE r.id = ?1
     """)
     Optional<Restaurant> findRestaurantById(@Param("restaurantId") int restaurantId);
 
@@ -89,10 +118,16 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Integer>
     int getLastInsertedId();
 
     
+    /**
+     * Deletes a restaurant by ID using native SQL.
+     * NOTE: This method should only be called after cascading deletes of related records.
+     * 
+     * @param restaurantId the restaurant ID to delete
+     */
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        // todo: Write SQL query here
+        DELETE FROM restaurants WHERE id = ?1
     """)
     void deleteRestaurantById(@Param("restaurantId") int restaurantId);
 }

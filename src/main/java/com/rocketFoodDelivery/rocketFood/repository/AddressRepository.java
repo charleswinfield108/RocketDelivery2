@@ -18,10 +18,18 @@ public interface AddressRepository extends JpaRepository<Address, Integer> {
 
     List<Address> findAllByOrderByIdDesc();
     
+    /**
+     * Saves a new address with native SQL INSERT.
+     * 
+     * @param streetAddress the street address
+     * @param city the city
+     * @param postalCode the postal code
+     */
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        // todo: Write SQL query here
+        INSERT INTO addresses (street_address, city, postal_code)
+        VALUES (?1, ?2, ?3)
     """)
     void saveAddress(String streetAddress, String city, String postalCode);
     

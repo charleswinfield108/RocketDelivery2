@@ -114,4 +114,21 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
         DELETE FROM orders WHERE id = ?1
     """)
     void deleteOrderById(@Param("orderId") int orderId);
+
+    /**
+     * Deletes all orders for a specific restaurant using native SQL.
+     * This is a cascade delete operation used when a restaurant is deleted.
+     * Uses parameterized binding (?1) to prevent SQL injection.
+     * 
+     * IMPORTANT: Must only be called after deleting associated ProductOrder entries
+     * via deleteProductOrdersByRestaurant() to maintain referential integrity.
+     * 
+     * @param restaurantId the restaurant ID whose orders should be deleted (must be > 0)
+     */
+    @Modifying
+    @Transactional
+    @Query(nativeQuery = true, value = """
+        DELETE FROM orders WHERE restaurant_id = ?1
+    """)
+    void deleteByRestaurantId(@Param("restaurantId") int restaurantId);
 }
