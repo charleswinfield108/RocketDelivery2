@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rocketFoodDelivery.rocketFood.dtos.AuthRequestDTO;
 import com.rocketFoodDelivery.rocketFood.models.UserEntity;
 import com.rocketFoodDelivery.rocketFood.repository.UserRepository;
-import com.rocketFoodDelivery.rocketFood.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@SuppressWarnings("null")
 public class AuthApiControllerTest {
     
     @Autowired
@@ -32,10 +32,8 @@ public class AuthApiControllerTest {
     @Autowired
     private UserRepository userRepository;
     
-    @Autowired
-    private AuthService authService;
-    
     @BeforeEach
+    @SuppressWarnings("null")
     public void setup() {
         // Create test user for authentication tests
         UserEntity testUser = UserEntity.builder()

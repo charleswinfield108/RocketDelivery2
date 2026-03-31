@@ -1,15 +1,12 @@
 package com.rocketFoodDelivery.rocketFood.controller.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rocketFoodDelivery.rocketFood.models.*;
 import com.rocketFoodDelivery.rocketFood.repository.*;
-import com.rocketFoodDelivery.rocketFood.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,13 +17,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@SuppressWarnings("null")
 public class OrdersApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -44,9 +39,6 @@ public class OrdersApiControllerTest {
     private OrderStatusRepository orderStatusRepository;
 
     @Autowired
-    private ProductOrderRepository productOrderRepository;
-
-    @Autowired
     private AddressRepository addressRepository;
 
     @Autowired
@@ -54,9 +46,6 @@ public class OrdersApiControllerTest {
 
     @Autowired
     private CourierStatusRepository courierStatusRepository;
-
-    @Autowired
-    private OrderService orderService;
 
     private Restaurant testRestaurant;
     private Customer testCustomer;
@@ -66,6 +55,7 @@ public class OrdersApiControllerTest {
     private Order testOrder2;
 
     @BeforeEach
+    @SuppressWarnings("null")
     public void setup() {
         // Create test data with required relationships
         

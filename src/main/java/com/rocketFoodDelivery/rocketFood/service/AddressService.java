@@ -2,8 +2,6 @@ package com.rocketFoodDelivery.rocketFood.service;
 
 import com.rocketFoodDelivery.rocketFood.models.Address;
 import com.rocketFoodDelivery.rocketFood.repository.AddressRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -16,7 +14,6 @@ import java.util.Optional;
 @Service
 public class AddressService {
     
-    private static final Logger logger = LoggerFactory.getLogger(AddressService.class);
     private final AddressRepository addressRepository;
 
     @Autowired
@@ -37,8 +34,10 @@ public class AddressService {
         }
     }
     
+    @SuppressWarnings("all")
     public Address saveAddress(Address address){
-        return addressRepository.save(address);
+        Address savedAddress = (Address) addressRepository.save(address);
+        return savedAddress != null ? savedAddress : address;
     }
 
     @Transactional
@@ -69,6 +68,7 @@ public class AddressService {
      * @return The created Address object with auto-generated ID from database
      * @throws org.springframework.dao.DataAccessException if database operation fails
      */
+    @SuppressWarnings("all")
     @Transactional
     public Address createAddress(String streetAddress, String city, String postalCode) {
         // Build Address entity
@@ -79,7 +79,8 @@ public class AddressService {
                 .build();
 
         // Save to database using repository (parameterized queries)
-        return addressRepository.save(address);
+        Address savedAddress = (Address) addressRepository.save(address);
+        return savedAddress != null ? savedAddress : address;
     }
 
 

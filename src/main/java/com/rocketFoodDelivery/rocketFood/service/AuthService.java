@@ -4,7 +4,6 @@ import com.rocketFoodDelivery.rocketFood.dtos.AuthRequestDTO;
 import com.rocketFoodDelivery.rocketFood.exception.UnauthorizedException;
 import com.rocketFoodDelivery.rocketFood.models.UserEntity;
 import com.rocketFoodDelivery.rocketFood.repository.UserRepository;
-import com.rocketFoodDelivery.rocketFood.security.JwtUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
     
     private UserRepository userRepository;
-    private JwtUtil jwtUtil;
     
     /**
      * Authenticates a user with email and password.

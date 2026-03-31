@@ -10,7 +10,6 @@ import com.rocketFoodDelivery.rocketFood.models.UserEntity;
 import com.rocketFoodDelivery.rocketFood.repository.AddressRepository;
 import com.rocketFoodDelivery.rocketFood.repository.RestaurantRepository;
 import com.rocketFoodDelivery.rocketFood.repository.UserRepository;
-import com.rocketFoodDelivery.rocketFood.service.RestaurantService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@SuppressWarnings("null")
 public class RestaurantApiControllerTest {
 
     @Autowired
@@ -55,14 +55,12 @@ public class RestaurantApiControllerTest {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private RestaurantService restaurantService;
-
     private Address testAddress;
     private UserEntity testUser;
     private Restaurant existingRestaurant;
 
     @BeforeEach
+    @SuppressWarnings("null")
     public void setup() {
         // Create test address
         testAddress = Address.builder()

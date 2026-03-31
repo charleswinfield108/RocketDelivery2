@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ProductOrderRepository extends JpaRepository<ProductOrder, Integer> {
@@ -46,7 +45,4 @@ public interface ProductOrderRepository extends JpaRepository<ProductOrder, Inte
 
     List<ProductOrder> findByOrderId(int id);
     List<ProductOrder> findByProductId(int id);
-
-    @Override
-    void deleteById(Integer productOrderId);
 }

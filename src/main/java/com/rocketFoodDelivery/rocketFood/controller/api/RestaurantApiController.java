@@ -34,7 +34,8 @@ public class RestaurantApiController {
     public ResponseEntity<Object> createRestaurant(@Valid @RequestBody ApiCreateRestaurantDTO restaurant, BindingResult result) {
         // Check validation errors
         if (result.hasErrors()) {
-            String errorMessage = result.getFieldError().getDefaultMessage();
+            @SuppressWarnings("null")
+            String errorMessage = result.getFieldError() != null ? result.getFieldError().getDefaultMessage() : "Validation failed";
             return ResponseEntity.badRequest()
                     .body(ResponseBuilder.error(errorMessage, "BAD_REQUEST"));
         }
@@ -195,6 +196,19 @@ public class RestaurantApiController {
     public ResponseEntity<Object> getAllRestaurants(
         @RequestParam(name = "rating", required = false) Integer rating,
         @RequestParam(name = "price_range", required = false) Integer priceRange) {
+        
+        // Validate rating parameter
+        if (rating != null && (rating < 1 || rating > 5)) {
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error("Rating must be between 1 and 5", "BAD_REQUEST"));
+        }
+        
+        // Validate price_range parameter
+        if (priceRange != null && (priceRange < 1 || priceRange > 3)) {
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error("Price range must be between 1 and 3", "BAD_REQUEST"));
+        }
+        
         return ResponseBuilder.buildOkResponse(restaurantService.findRestaurantsByRatingAndPriceRange(rating, priceRange));
     }
 }

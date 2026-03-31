@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import org.springframework.lang.NonNull;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
@@ -15,5 +16,5 @@ public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
     Optional<Employee> findByUserEntityId( int id);
     
     @Override
-    void deleteById(Integer employeeId);
+    void deleteById(@NonNull Integer employeeId);
 }

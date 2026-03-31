@@ -103,6 +103,7 @@ public class RestaurantService {
      * @return An Optional containing the created restaurant's information as an ApiCreateRestaurantDTO.
      */
     @Transactional
+    @SuppressWarnings("all")
     public Optional<ApiCreateRestaurantDTO> createRestaurant(ApiCreateRestaurantDTO restaurant) {
         // Validate user exists
         if (restaurant.getUserId() <= 0) {
@@ -172,6 +173,7 @@ public class RestaurantService {
      * @return An Optional containing the updated restaurant's information.
      */
     @Transactional
+    @SuppressWarnings("all")
     public Optional<ApiCreateRestaurantDTO> updateRestaurant(int id, ApiCreateRestaurantDTO updatedRestaurantDTO) {
         if (id <= 0) {
             throw new IllegalArgumentException("Restaurant ID must be greater than 0");

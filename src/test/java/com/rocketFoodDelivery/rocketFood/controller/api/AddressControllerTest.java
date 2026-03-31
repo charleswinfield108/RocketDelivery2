@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@SuppressWarnings("all")
 public class AddressControllerTest {
 
     @Autowired
@@ -57,7 +58,7 @@ public class AddressControllerTest {
         String requestBody = objectMapper.writeValueAsString(validAddress);
 
         // Act & Assert
-        MvcResult result = mockMvc.perform(post("/api/address")
+        mockMvc.perform(post("/api/address")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isCreated())  // 201
