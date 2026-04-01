@@ -825,7 +825,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"restaurant_id\": 1,\n  \"customer_id\": 3,\n  \"products\": [\n    {\n      \"id\": 2,\n      \"quantity\": 1\n    },\n    {\n      \"id\": 3,\n      \"quantity\": 3\n    }\n  ]\n}"
+              "raw": "{\n  \"customer_id\": 1,\n  \"restaurant_id\": 1,\n  \"total_cost\": 23500,\n  \"products\": [\n    {\n      \"product_id\": 1,\n      \"product_quantity\": 1\n    },\n    {\n      \"product_id\": 2,\n      \"product_quantity\": 1\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/orders",
@@ -837,7 +837,7 @@
                 "orders"
               ]
             },
-            "description": "Create a new order with products"
+            "description": "Create a new order with products. Price must match the sum of (product_cost × quantity) for all items."
           },
           "response": [
             {
@@ -852,7 +852,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"restaurant_id\": 1,\n  \"customer_id\": 3,\n  \"products\": [\n    {\n      \"id\": 2,\n      \"quantity\": 1\n    },\n    {\n      \"id\": 3,\n      \"quantity\": 3\n    }\n  ]\n}"
+                  "raw": "{\n  \"customer_id\": 1,\n  \"restaurant_id\": 1,\n  \"total_cost\": 23500,\n  \"products\": [\n    {\n      \"product_id\": 1,\n      \"product_quantity\": 1\n    },\n    {\n      \"product_id\": 2,\n      \"product_quantity\": 1\n    }\n  ]\n}"
                 },
                 "url": {
                   "raw": "http://localhost:8080/api/orders",
@@ -867,15 +867,15 @@
                   ]
                 }
               },
-              "status": "OK",
-              "code": 200,
+              "status": "Created",
+              "code": 201,
               "header": [
                 {
                   "key": "Content-Type",
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": 15,\n  \"customer_id\": 3,\n  \"customer_name\": \"John Doe\",\n  \"customer_address\": \"123 Main St, City, State 12345\",\n  \"restaurant_id\": 1,\n  \"restaurant_name\": \"Fast Pub\",\n  \"restaurant_address\": \"5398 Quigley Harbor, North Lynelle, 60808\",\n  \"courier_id\": null,\n  \"courier_name\": null,\n  \"status\": \"pending\",\n  \"products\": [\n    {\n      \"product_id\": 2,\n      \"product_name\": \"Hamburger\",\n      \"quantity\": 1,\n      \"unit_cost\": 850,\n      \"total_cost\": 850\n    },\n    {\n      \"product_id\": 3,\n      \"product_name\": \"Fries\",\n      \"quantity\": 3,\n      \"unit_cost\": 350,\n      \"total_cost\": 1050\n    }\n  ],\n  \"total_cost\": 1900\n}\n"
+              "body": "{\n  \"message\": \"Order created successfully\",\n  \"data\": {\n    \"id\": 42,\n    \"customer_id\": 1,\n    \"restaurant_id\": 1,\n    \"status\": \"PENDING\",\n    \"total_cost\": 23500,\n    \"products\": [\n      {\n        \"product_name\": \"Pizza\",\n        \"unit_cost\": 15000,\n        \"quantity\": 1,\n        \"total_cost\": 15000\n      },\n      {\n        \"product_name\": \"Salad\",\n        \"unit_cost\": 8500,\n        \"quantity\": 1,\n        \"total_cost\": 8500\n      }\n    ]\n  },\n  \"error\": null\n}\n"
             }
           ]
         },
@@ -895,21 +895,21 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"delivered\"\n}"
+              "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/order/15/status",
+              "raw": "{{base_url}}/api/order/42/status",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "order",
-                "15",
+                "42",
                 "status"
               ]
             },
-            "description": "Update the status of an order (e.g., pending, in progress, delivered)"
+            "description": "Update the status of an order. Valid transitions: PENDING→{CONFIRMED,CANCELLED}, CONFIRMED→{READY,CANCELLED}, READY→{PICKED_UP}, PICKED_UP→{DELIVERED}"
           },
           "response": [
             {
@@ -924,10 +924,10 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"status\": \"delivered\"\n}"
+                  "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
                 },
                 "url": {
-                  "raw": "http://localhost:8080/api/order/15/status",
+                  "raw": "http://localhost:8080/api/order/42/status",
                   "protocol": "http",
                   "host": [
                     "localhost"
@@ -936,7 +936,7 @@
                   "path": [
                     "api",
                     "order",
-                    "15",
+                    "42",
                     "status"
                   ]
                 }
@@ -949,7 +949,46 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"delivered\"\n}\n"
+              "body": "{\n  \"status\": \"CONFIRMED\"\n}\n"
+            },
+            {
+              "name": "Bad Request - Invalid Transition",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"INVALID_STATUS\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/order/42/status",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "order",
+                    "42",
+                    "status"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Invalid status transition\",\n  \"error\": \"BAD_REQUEST\"\n}\n"
             }
           ]
         },
@@ -964,17 +1003,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/order/15",
+              "raw": "{{base_url}}/api/order/42",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "order",
-                "15"
+                "42"
               ]
             },
-            "description": "Delete an order by ID (cascade deletes associated ProductOrder entries)"
+            "description": "Delete an order by ID. Cascade deletes associated ProductOrder entries. Cannot delete DELIVERED or CANCELLED orders."
           },
           "response": [
             {
@@ -983,7 +1022,7 @@
                 "method": "DELETE",
                 "header": [],
                 "url": {
-                  "raw": "http://localhost:8080/api/order/15",
+                  "raw": "http://localhost:8080/api/order/42",
                   "protocol": "http",
                   "host": [
                     "localhost"
@@ -992,7 +1031,7 @@
                   "path": [
                     "api",
                     "order",
-                    "15"
+                    "42"
                   ]
                 }
               },
@@ -1004,7 +1043,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"message\": \"Order deleted successfully\",\n  \"data\": \"\"\n}\n"
+              "body": "{\n  \"message\": \"Order deleted successfully\",\n  \"data\": \"\",\n  \"error\": null\n}\n"
             },
             {
               "name": "Not Found",
@@ -1033,7 +1072,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": \"Order with ID 999 not found\",\n  \"details\": \"NOT_FOUND\"\n}\n"
+              "body": "{\n  \"message\": \"Order with ID 999 not found\",\n  \"data\": null,\n  \"error\": \"NOT_FOUND\"\n}\n"
             }
           ]
         }
