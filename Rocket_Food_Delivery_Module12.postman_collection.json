@@ -952,6 +952,165 @@
               "body": "{\n  \"status\": \"delivered\"\n}\n"
             }
           ]
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/order/15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "order",
+                "15"
+              ]
+            },
+            "description": "Delete an order by ID (cascade deletes associated ProductOrder entries)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/order/15",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "order",
+                    "15"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Order deleted successfully\",\n  \"data\": \"\"\n}\n"
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/order/999",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "order",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Order with ID 999 not found\",\n  \"details\": \"NOT_FOUND\"\n}\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🏠 Addresses",
+      "item": [
+        {
+          "name": "Create Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"street_address\": \"123 Main Street\",\n  \"city\": \"Montreal\",\n  \"postal_code\": \"H1A1A1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "address"
+              ]
+            },
+            "description": "Create a new address record"
+          },
+          "response": [
+            {
+              "name": "Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"street_address\": \"123 Main Street\",\n  \"city\": \"Montreal\",\n  \"postal_code\": \"H1A1A1\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/address",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "address"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 25,\n  \"street_address\": \"123 Main Street\",\n  \"city\": \"Montreal\",\n  \"postal_code\": \"H1A1A1\"\n}\n"
+            }
+          ]
         }
       ]
     }
