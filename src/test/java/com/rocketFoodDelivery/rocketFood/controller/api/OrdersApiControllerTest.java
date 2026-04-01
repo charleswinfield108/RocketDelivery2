@@ -1,5 +1,8 @@
 package com.rocketFoodDelivery.rocketFood.controller.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rocketFoodDelivery.rocketFood.dtos.ApiCreateOrderRequestDTO;
+import com.rocketFoodDelivery.rocketFood.dtos.ApiProductItemDTO;
 import com.rocketFoodDelivery.rocketFood.models.*;
 import com.rocketFoodDelivery.rocketFood.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,8 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -47,12 +54,20 @@ public class OrdersApiControllerTest {
     @Autowired
     private CourierStatusRepository courierStatusRepository;
 
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private ProductOrderRepository productOrderRepository;
+
     private Restaurant testRestaurant;
     private Customer testCustomer;
     private Courier testCourier;
     private OrderStatus testOrderStatus;
     private Order testOrder1;
     private Order testOrder2;
+    private Product testProduct1;
+    private Product testProduct2;
 
     @BeforeEach
     @SuppressWarnings("null")
@@ -146,6 +161,21 @@ public class OrdersApiControllerTest {
                 .courierStatus(courierStatus)
                 .build();
         courierRepository.save(testCourier);
+
+        // Create test products
+        testProduct1 = Product.builder()
+                .name("Pizza")
+                .restaurant(testRestaurant)
+                .cost(15000)  // 150.00 in cents
+                .build();
+        productRepository.save(testProduct1);
+
+        testProduct2 = Product.builder()
+                .name("Salad")
+                .restaurant(testRestaurant)
+                .cost(8500)  // 85.00 in cents
+                .build();
+        productRepository.save(testProduct2);
 
         // Create test orders
         testOrder1 = Order.builder()
@@ -434,5 +464,496 @@ public class OrdersApiControllerTest {
                 .param("id", "0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").isNotEmpty());
+    }
+
+    // ==================== POST /api/orders SUCCESS TESTS ====================
+
+    @Test
+    public void testCreateOrder_WithValidRequest_ShouldReturn201() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000); // Product 1: 150.00
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.id").isNumber())
+                .andExpect(jsonPath("$.data.customer_id").value((int) testCustomer.getId()))
+                .andExpect(jsonPath("$.data.restaurant_id").value((int) testRestaurant.getId()));
+    }
+
+    @Test
+    public void testCreateOrder_VerifyOrderPersisted() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isCreated());
+
+        // Verify order exists in database
+        assert orderRepository.findAll().size() > 2; // At least 3 orders (2 setup + 1 created)
+    }
+
+    @Test
+    public void testCreateOrder_VerifyStatusIsPending() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.status").value("PENDING"));
+    }
+
+    @Test
+    public void testCreateOrder_WithMultipleProducts_ShouldReturn201() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(23500); // Product1: 15000 + Product2: 8500 = 23500
+
+        ApiProductItemDTO product1 = new ApiProductItemDTO();
+        product1.setProduct_id((int) testProduct1.getId());
+        product1.setProduct_quantity(1);
+
+        ApiProductItemDTO product2 = new ApiProductItemDTO();
+        product2.setProduct_id((int) testProduct2.getId());
+        product2.setProduct_quantity(1);
+
+        request.setProducts(Arrays.asList(product1, product2));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.id").isNumber());
+    }
+
+    @Test
+    public void testCreateOrder_VerifyProductOrdersCreated() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(38500); // Product1: 15000 × 2 + Product2: 8500 × 1 = 38500
+
+        ApiProductItemDTO product1 = new ApiProductItemDTO();
+        product1.setProduct_id((int) testProduct1.getId());
+        product1.setProduct_quantity(2);
+
+        ApiProductItemDTO product2 = new ApiProductItemDTO();
+        product2.setProduct_id((int) testProduct2.getId());
+        product2.setProduct_quantity(1);
+
+        request.setProducts(Arrays.asList(product1, product2));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        // Capture response to get order ID
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isCreated());
+
+        // Verify ProductOrder records were created
+        List<ProductOrder> productOrders = productOrderRepository.findAll();
+        assert productOrders.size() >= 2; // At least 2 product orders created
+    }
+
+    @Test
+    public void testCreateOrder_VerifyResponseIncludesProducts() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(23500); // Product1: 15000 + Product2: 8500
+
+        ApiProductItemDTO product1 = new ApiProductItemDTO();
+        product1.setProduct_id((int) testProduct1.getId());
+        product1.setProduct_quantity(1);
+
+        ApiProductItemDTO product2 = new ApiProductItemDTO();
+        product2.setProduct_id((int) testProduct2.getId());
+        product2.setProduct_quantity(1);
+
+        request.setProducts(Arrays.asList(product1, product2));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.products").isArray())
+                .andExpect(jsonPath("$.data.products", hasSize(greaterThan(0))));
+    }
+
+    @Test
+    public void testCreateOrder_ResponseFormatCorrect() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").isNotEmpty())
+                .andExpect(jsonPath("$.data").exists())
+                .andExpect(jsonPath("$.data.id").exists())
+                .andExpect(jsonPath("$.data.customer_id").exists())
+                .andExpect(jsonPath("$.data.restaurant_id").exists())
+                .andExpect(jsonPath("$.data.status").exists())
+                .andExpect(jsonPath("$.data.total_cost").exists());
+    }
+
+    @Test
+    public void testCreateOrder_WithHighQuantity() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(150000); // 10 × 15000
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(10);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.id").isNumber());
+    }
+
+    // ==================== POST /api/orders FAILURE TESTS ====================
+
+    @Test
+    public void testCreateOrder_MissingCustomerId_ShouldReturn400() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id(0); // Invalid/missing
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testCreateOrder_MissingRestaurantId_ShouldReturn400() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id(0); // Invalid/missing
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testCreateOrder_EmptyProductsArray_ShouldReturn400() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000);
+        request.setProducts(Arrays.asList()); // Empty
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testCreateOrder_TotalCostMismatch_ShouldReturn400() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(10000); // Wrong: should be 15000
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testCreateOrder_InvalidProductQuantity_ShouldReturn400() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(0); // Invalid
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testCreateOrder_NonExistentCustomer_ShouldReturn404() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id(99999); // Non-existent
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testCreateOrder_NonExistentRestaurant_ShouldReturn404() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id(99999); // Non-existent
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testCreateOrder_NonExistentProduct_ShouldReturn404() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id(99999); // Non-existent
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testCreateOrder_ProductFromDifferentRestaurant_ShouldReturn400() throws Exception {
+        // Create another restaurant with its own product
+        Address otherAddress = Address.builder()
+                .streetAddress("999 Other St")
+                .city("Providence")
+                .postalCode("02901")
+                .build();
+        addressRepository.save(otherAddress);
+
+        UserEntity otherUser = UserEntity.builder()
+                .email("other@test.com")
+                .password("pass123")
+                .name("Other User")
+                .build();
+        userRepository.save(otherUser);
+
+        Restaurant otherRestaurant = Restaurant.builder()
+                .email("other@test.com")
+                .phone("555-other")
+                .name("Other Restaurant")
+                .address(otherAddress)
+                .userEntity(otherUser)
+                .priceRange(3)
+                .build();
+        restaurantRepository.save(otherRestaurant);
+
+        Product otherProduct = Product.builder()
+                .name("Other Product")
+                .restaurant(otherRestaurant)
+                .cost(5000)
+                .build();
+        productRepository.save(otherProduct);
+
+        // Try to order product from otherRestaurant using testRestaurant
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId()); // Main restaurant
+        request.setTotal_cost(5000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) otherProduct.getId()); // Product from OTHER restaurant
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testCreateOrder_ZeroTotalCost_ShouldReturn400() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(0); // Invalid
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testCreateOrder_NegativeQuantity_ShouldReturn400() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id((int) testCustomer.getId());
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(-1); // Invalid
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testCreateOrder_ErrorResponseFormat() throws Exception {
+        ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
+        request.setCustomer_id(0); // Invalid
+        request.setRestaurant_id((int) testRestaurant.getId());
+        request.setTotal_cost(15000);
+
+        ApiProductItemDTO product = new ApiProductItemDTO();
+        product.setProduct_id((int) testProduct1.getId());
+        product.setProduct_quantity(1);
+        request.setProducts(Arrays.asList(product));
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestBody = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
     }
 }
