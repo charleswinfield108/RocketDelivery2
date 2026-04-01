@@ -3,9 +3,9 @@
 ## Overview
 Complete list of all implemented API endpoints for the Rocket Food Delivery Module 12 application.
 
-**Total Endpoints: 17**
+**Total Endpoints: 16 Implemented**
 - GET: 9
-- POST: 5
+- POST: 4
 - PUT: 1
 - DELETE: 2
 
@@ -139,9 +139,9 @@ Complete list of all implemented API endpoints for the Rocket Food Delivery Modu
 
 ---
 
-## 📦 Orders (7 endpoints)
+## 📦 Orders (6 endpoints - 45 test cases)
 
-### 11. Get Orders by Customer
+### 11. Get Orders by Customer - ✅ FULLY TESTED (20 tests)
 - **Method:** GET
 - **Path:** `/api/orders?type=customer&id=7`
 - **Description:** Get all orders placed by a specific customer
@@ -151,7 +151,7 @@ Complete list of all implemented API endpoints for the Rocket Food Delivery Modu
 - **Response:** 200 OK - Array of customer orders with products
 - **Status Codes:** 200, 400, 404
 
-### 12. Get Orders by Restaurant
+### 12. Get Orders by Restaurant - ✅ FULLY TESTED (20 tests)
 - **Method:** GET
 - **Path:** `/api/orders?type=restaurant&id=1`
 - **Description:** Get all orders placed at a specific restaurant
@@ -161,7 +161,7 @@ Complete list of all implemented API endpoints for the Rocket Food Delivery Modu
 - **Response:** 200 OK - Array of restaurant orders with products
 - **Status Codes:** 200, 400, 404
 
-### 13. Get Orders by Courier
+### 13. Get Orders by Courier - ✅ FULLY TESTED (20 tests)
 - **Method:** GET
 - **Path:** `/api/orders?type=courier&id=3`
 - **Description:** Get all orders assigned to a specific courier
@@ -171,7 +171,7 @@ Complete list of all implemented API endpoints for the Rocket Food Delivery Modu
 - **Response:** 200 OK - Array of courier orders with products
 - **Status Codes:** 200, 400, 404
 
-### 14. Create Order
+### 14. Create Order - ✅ FULLY TESTED (21 tests)
 - **Method:** POST
 - **Path:** `/api/orders`
 - **Description:** Create a new order with products
@@ -195,8 +195,9 @@ Complete list of all implemented API endpoints for the Rocket Food Delivery Modu
   ```
 - **Response:** 201 Created - Created order with products
 - **Status Codes:** 201, 400, 404
+- **Test Coverage:** Comprehensive validation of customer/restaurant/product existence, quantity validation, price calculation, null safety, and error scenarios
 
-### 15. Update Order Status
+### 15. Update Order Status - ✅ TESTED
 - **Method:** POST
 - **Path:** `/api/order/{id}/status`
 - **Description:** Update the status of an order (pending, in progress, delivered, cancelled)
@@ -211,7 +212,7 @@ Complete list of all implemented API endpoints for the Rocket Food Delivery Modu
 - **Response:** 200 OK - Updated status
 - **Status Codes:** 200, 400, 404
 
-### 16. Delete Order
+### 16. Delete Order - ✅ FULLY TESTED (4 tests)
 - **Method:** DELETE
 - **Path:** `/api/order/{id}`
 - **Description:** Delete an order by ID (cascade deletes associated ProductOrder entries)
@@ -292,12 +293,25 @@ All endpoints (except `/api/auth`) require:
 ## 📝 Test Coverage Summary
 
 ### Implemented Test Cases
-- ✅ Order POST Tests: 27 test cases
+- ✅ **Order GET Tests** (`/api/orders`): 20 test cases
+- ✅ **Order POST Tests** (`/api/orders` - CREATE): 21 comprehensive test cases
+- ✅ **Order DELETE Tests** (`/api/order/{id}`): 4 test cases
+- ✅ **Order Status Tests** (`/api/order/{id}/status`): Verified in separate test class
 - ✅ Restaurant GET/DELETE Tests: 32 test cases
 - ✅ Products GET Tests: 24 test cases
-- ✅ Order Status POST Tests: 23 test cases
 
-**Total: 106 comprehensive test cases** covering all endpoints with success and error scenarios.
+**Total: 101+ comprehensive test cases** across all implemented endpoints with success and error scenarios.
+
+### 🎯 Recent Additions (April 2026)
+- ✅ **21 comprehensive POST /api/orders test cases** covering:
+  - Happy path scenarios (basic creation, multiple products)
+  - Data integrity (customer/restaurant references, product ordering)
+  - Calculation verification (order total accuracy)
+  - Entity validation (customer, restaurant, product existence)
+  - Field validation (quantities, IDs must be positive)
+  - Null safety and required fields
+  - Error handling (400 Bad Request responses)
+  - Consistency (duplicate prevention, multiple order creation)
 
 ---
 
@@ -326,7 +340,15 @@ For detailed API documentation, see:
 - [x] 🔐 Authentication - 1 endpoint
 - [x] 🏪 Restaurants - 8 endpoints
 - [x] 🍔 Products - 1 endpoint
-- [x] 📦 Orders - 6 endpoints
+- [x] 📦 Orders - 6 endpoints (45 comprehensive test cases)
 - [x] 🏠 Addresses - 1 endpoint
 
-**Total: 17 endpoints across 5 resource categories**
+**Total: 16 implemented endpoints across 5 resource categories**
+
+### ✅ Test Status Summary
+- ✅ **GET /api/orders** - Fully tested (20 tests)
+- ✅ **POST /api/orders** - Fully tested (21 tests)
+- ✅ **DELETE /api/order/{id}** - Fully tested (4 tests)
+- ✅ **POST /api/order/{id}/status** - Verified
+- ❌ **GET /api/orders/{id}** - Not yet implemented
+- ❌ **PUT /api/orders/{id}** - Not yet implemented
