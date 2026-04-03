@@ -305,7 +305,7 @@ public class RestaurantGetDeleteTest {
         int restaurantId = testRestaurant1.getId();
         
         mockMvc.perform(delete("/api/restaurants/" + restaurantId))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -314,7 +314,7 @@ public class RestaurantGetDeleteTest {
         
         // Delete restaurant
         mockMvc.perform(delete("/api/restaurants/" + restaurantId))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         
         // Verify it's deleted
         mockMvc.perform(get("/api/restaurants/" + restaurantId))
@@ -326,7 +326,7 @@ public class RestaurantGetDeleteTest {
         int restaurantId = testRestaurant1.getId();
         
         mockMvc.perform(delete("/api/restaurants/" + restaurantId))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         
         // Verify in database
         assertFalse(restaurantRepository.existsById(restaurantId));
@@ -373,7 +373,7 @@ public class RestaurantGetDeleteTest {
         
         // Delete restaurant
         mockMvc.perform(delete("/api/restaurants/" + restaurantId))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         
         // Verify products are deleted
         List<Product> products = productRepository.findByRestaurantId(restaurantId);
@@ -412,8 +412,8 @@ public class RestaurantGetDeleteTest {
         Order order = Order.builder()
                 .customer(customer)
                 .restaurant(testRestaurant1)
-                .order_status(status)
-                .restaurant_rating(4)
+                .orderStatus(status)
+                .restaurantRating(4)
                 .build();
         orderRepository.save(order);
         
@@ -422,7 +422,7 @@ public class RestaurantGetDeleteTest {
         
         // Delete restaurant
         mockMvc.perform(delete("/api/restaurants/" + restaurantId))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         
         // Verify orders associated with restaurant are handled
         assertTrue(!orderRepository.existsById(orderId) || 
@@ -470,16 +470,16 @@ public class RestaurantGetDeleteTest {
         Order order = Order.builder()
                 .customer(customer)
                 .restaurant(testRestaurant1)
-                .order_status(status)
-                .restaurant_rating(5)
+                .orderStatus(status)
+                .restaurantRating(5)
                 .build();
         orderRepository.save(order);
         
         ProductOrder productOrder = ProductOrder.builder()
                 .product(product)
                 .order(order)
-                .product_quantity(2)
-                .product_unit_cost(1500)
+                .productQuantity(2)
+                .productUnitCost(1500)
                 .build();
         productOrderRepository.save(productOrder);
         
@@ -487,7 +487,7 @@ public class RestaurantGetDeleteTest {
         
         // Delete restaurant
         mockMvc.perform(delete("/api/restaurants/" + restaurantId))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         
         // Verify cascade is complete
         assertFalse(restaurantRepository.existsById(restaurantId));
@@ -502,7 +502,7 @@ public class RestaurantGetDeleteTest {
         
         // Delete restaurants
         mockMvc.perform(delete("/api/restaurants/" + restaurantId))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         
         // Verify complete deletion (atomic - all or nothing)
         assertFalse(restaurantRepository.existsById(restaurantId));
@@ -514,7 +514,7 @@ public class RestaurantGetDeleteTest {
         
         // First delete
         mockMvc.perform(delete("/api/restaurants/" + restaurantId))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         
         // Second delete should return 404
         mockMvc.perform(delete("/api/restaurants/" + restaurantId))
@@ -528,7 +528,7 @@ public class RestaurantGetDeleteTest {
         
         // Delete one restaurant
         mockMvc.perform(delete("/api/restaurants/" + restaurantIdToDelete))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         
         // Verify other restaurant still exists and is accessible
         mockMvc.perform(get("/api/restaurants/" + otherRestaurantId))
@@ -548,7 +548,7 @@ public class RestaurantGetDeleteTest {
         
         // Delete restaurant
         mockMvc.perform(delete("/api/restaurants/" + restaurantIdToDelete))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         
         // Verify deleted restaurant not in list anymore
         mockMvc.perform(get("/api/restaurants"))

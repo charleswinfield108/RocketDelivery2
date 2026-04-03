@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,7 @@ public class ApiCreateRestaurantDTO {
     @JsonProperty("user_id")
     private int userId;
 
+    @NotBlank(message = "Name is required")
     private String name;
 
     @JsonProperty("price_range")
@@ -27,9 +29,11 @@ public class ApiCreateRestaurantDTO {
     @Max(3)
     private int priceRange;
 
+    @NotBlank(message = "Phone is required")
     private String phone;
 
-    @Email
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email should be valid")
     private String email;
 
     private ApiAddressDTO address;

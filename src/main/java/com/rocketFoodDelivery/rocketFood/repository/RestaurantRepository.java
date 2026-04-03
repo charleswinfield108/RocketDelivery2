@@ -77,7 +77,7 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Integer>
         INSERT INTO restaurants (user_id, address_id, name, price_range, phone, email)
         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
     """)
-    void saveRestaurant(long userId, long addressId, String name, int priceRange, String phone, String email);
+    int saveRestaurant(long userId, long addressId, String name, int priceRange, String phone, String email);
 
 
     /**
@@ -95,7 +95,7 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Integer>
         SET name = ?2, price_range = ?3, phone = ?4
         WHERE id = ?1
     """)
-    void updateRestaurant(int restaurantId, String name, int priceRange, String phone);
+    int updateRestaurant(int restaurantId, String name, int priceRange, String phone);
 
 
     /**
@@ -107,7 +107,7 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Integer>
     @Query(nativeQuery = true, value = """
         SELECT r.id, r.user_id, r.address_id, r.name, r.price_range, r.phone, r.email
         FROM restaurants r
-        WHERE r.id = ?1
+        WHERE r.id = :restaurantId
     """)
     Optional<Restaurant> findRestaurantById(@Param("restaurantId") int restaurantId);
 
@@ -127,7 +127,7 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Integer>
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        DELETE FROM restaurants WHERE id = ?1
+        DELETE FROM restaurants WHERE id = :restaurantId
     """)
-    void deleteRestaurantById(@Param("restaurantId") int restaurantId);
+    int deleteRestaurantById(@Param("restaurantId") int restaurantId);
 }

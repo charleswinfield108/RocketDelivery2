@@ -343,7 +343,7 @@ public class RestaurantApiControllerTest {
         // Act & Assert
         mockMvc.perform(delete("/api/restaurants/" + existingRestaurant.getId())
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
 
         // Verify restaurant is deleted
         mockMvc.perform(get("/api/restaurant/" + existingRestaurant.getId())
@@ -387,7 +387,7 @@ public class RestaurantApiControllerTest {
         // Act - Delete restaurant
         mockMvc.perform(delete("/api/restaurants/" + existingRestaurant.getId())
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
 
         // Assert - Verify restaurant is deleted
         mockMvc.perform(get("/api/restaurant/" + existingRestaurant.getId()))

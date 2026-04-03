@@ -43,8 +43,7 @@ public class RestaurantApiController {
         try {
             Optional<ApiCreateRestaurantDTO> createdRestaurant = restaurantService.createRestaurant(restaurant);
             if (createdRestaurant.isPresent()) {
-                return ResponseEntity.status(201)
-                        .body(ResponseBuilder.success(createdRestaurant.get(), "Restaurant created successfully"));
+                return ResponseBuilder.buildCreatedResponse(createdRestaurant.get());
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseBuilder.error("Failed to create restaurant", "BAD_REQUEST"));
@@ -57,9 +56,10 @@ public class RestaurantApiController {
     
     /**
      * Deletes a restaurant by ID and cascades deletion to associated products and orders.
+     * Returns the deleted restaurant data (id, name, price_range, rating) per Module 12 spec.
      *
      * @param id The ID of the restaurant to delete.
-     * @return ResponseEntity with no content (HTTP 204), or error if not found or invalid ID.
+     * @return ResponseEntity with restaurant data (HTTP 200), or error if not found or invalid ID.
      */
     @DeleteMapping("/api/restaurants/{id}")
     public ResponseEntity<Object> deleteRestaurant(@PathVariable String id){
@@ -76,8 +76,19 @@ public class RestaurantApiController {
         }
 
         try {
-            restaurantService.deleteRestaurant(Integer.parseInt(id));
-            return ResponseEntity.noContent().build();
+            int restaurantId = Integer.parseInt(id);
+            
+            // Fetch restaurant data before deletion to return in response
+            Optional<ApiRestaurantDTO> restaurantOptional = restaurantService.findRestaurantWithAverageRatingById(restaurantId);
+            if (!restaurantOptional.isPresent()) {
+                throw new ResourceNotFoundException(String.format("Restaurant with id %d not found", restaurantId));
+            }
+            
+            // Delete the restaurant
+            restaurantService.deleteRestaurant(restaurantId);
+            
+            // Return 200 OK with the deleted restaurant data
+            return ResponseBuilder.buildOkResponse(restaurantOptional.get());
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(404)
                     .body(ResponseBuilder.error(e.getMessage(), "NOT_FOUND"));
@@ -128,7 +139,7 @@ public class RestaurantApiController {
                 responseDTO.setPriceRange(updatedRestaurant.get().getPriceRange());
                 responseDTO.setRating(restaurantUpdateData.getRating());
 
-                return ResponseEntity.ok(ResponseBuilder.success(responseDTO, "Restaurant updated successfully"));
+                return ResponseBuilder.buildOkResponse(responseDTO);
             } else {
                 return ResponseEntity.status(404)
                         .body(ResponseBuilder.error("Restaurant not found", "NOT_FOUND"));
@@ -167,7 +178,7 @@ public class RestaurantApiController {
             return ResponseEntity.status(404)
                     .body(ResponseBuilder.error("Restaurant with ID " + id + " not found", "NOT_FOUND"));
         }
-        return ResponseEntity.ok(ResponseBuilder.success(restaurantWithRatingOptional.get(), "Success"));
+        return ResponseBuilder.buildOkResponse(restaurantWithRatingOptional.get());
     }
 
     /**

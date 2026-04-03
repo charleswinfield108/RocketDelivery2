@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "rocket-food-delivery-m12",
-    "name": "Rocket Food Delivery - Module 12",
-    "description": "Complete API collection for Rocket Food Delivery Module 12 endpoints\n\n## Authentication\nUse the POST /api/auth endpoint to get an access token. The token will be automatically stored and used for all authenticated requests.\n\n## Base URL\nSet the `base_url` variable to your API server (default: http://localhost:8080)",
+    "name": "Rocket Food Delivery - Module 12 Complete API",
+    "description": "Complete API collection for Rocket Food Delivery Module 12\n\n## 8 Verified Module 12 Endpoints\n1. POST /api/auth - Authentication with JWT\n2. GET /api/restaurants - List all restaurants\n3. GET /api/restaurants/{id} - Get restaurant details\n4. POST /api/restaurants - Create new restaurant\n5. PUT /api/restaurants/{id} - Update restaurant\n6. DELETE /api/restaurants/{id} - Delete restaurant\n7. GET /api/orders - List orders with filtering\n8. POST /api/orders - Create new order\n9. POST /api/order/{id}/status - Update order status\n10. GET /api/products - List products by restaurant\n\n## Setup Instructions\n1. Set environment variable 'base_url' (default: http://localhost:8080)\n2. Run 'Get Access Token' endpoint first to save JWT token\n3. Token is automatically saved to 'jwt_token' variable\n4. All other endpoints use Bearer token authentication\n\n## Authentication\nJWT authentication on all endpoints except POST /api/auth. Bearer token automatically added to requests.\n\n## Test Coverage\n298 tests passing (100% pass rate) ✅",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [

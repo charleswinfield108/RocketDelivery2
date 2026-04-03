@@ -54,7 +54,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @Query(nativeQuery = true, value = """
         SELECT p.id, p.restaurant_id, p.name, p.description, p.cost
         FROM products p
-        WHERE p.restaurant_id = ?1
+        WHERE p.restaurant_id = :restaurantId
         ORDER BY p.id ASC
     """)
     List<Product> findProductsByRestaurantId(@Param("restaurantId") int restaurantId);
@@ -79,7 +79,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        DELETE FROM products WHERE restaurant_id = ?1
+        DELETE FROM products WHERE restaurant_id = :restaurantId
     """)
     int deleteProductsByRestaurantId(@Param("restaurantId") int restaurantId);
 }

@@ -355,7 +355,7 @@ public class ProductsGetTest {
                 .andExpect(jsonPath("$.data[0].name").isString())
                 .andExpect(jsonPath("$.data[0].description").isString())
                 .andExpect(jsonPath("$.data[0].cost").isNumber())
-                .andExpect(jsonPath("$.data[0].restaurantId").isNumber());
+                .andExpect(jsonPath("$.data[0].restaurant_id").isNumber());
     }
 
     /**
@@ -395,9 +395,9 @@ public class ProductsGetTest {
         mockMvc.perform(get("/api/products")
                 .param("restaurant", String.valueOf(testRestaurant1.getId())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].restaurantId").value(testRestaurant1.getId()))
-                .andExpect(jsonPath("$.data[1].restaurantId").value(testRestaurant1.getId()))
-                .andExpect(jsonPath("$.data[2].restaurantId").value(testRestaurant1.getId()));
+                .andExpect(jsonPath("$.data[0].restaurant_id").value(testRestaurant1.getId()))
+                .andExpect(jsonPath("$.data[1].restaurant_id").value(testRestaurant1.getId()))
+                .andExpect(jsonPath("$.data[2].restaurant_id").value(testRestaurant1.getId()));
     }
 
     // ==================== DATABASE VERIFICATION TESTS ====================
@@ -429,7 +429,7 @@ public class ProductsGetTest {
                 .param("restaurant", String.valueOf(testRestaurant1.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(3)))
-                .andExpect(jsonPath("$.data[*].restaurantId", everyItem(
+                .andExpect(jsonPath("$.data[*].restaurant_id", everyItem(
                         equalTo(testRestaurant1.getId())
                 )));
     }
@@ -517,8 +517,8 @@ public class ProductsGetTest {
         mockMvc.perform(get("/api/products")
                 .param("restaurant", String.valueOf(restaurantId)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].restaurantId").value(restaurantId))
-                .andExpect(jsonPath("$.data[1].restaurantId").value(restaurantId))
-                .andExpect(jsonPath("$.data[2].restaurantId").value(restaurantId));
+                .andExpect(jsonPath("$.data[0].restaurant_id").value(restaurantId))
+                .andExpect(jsonPath("$.data[1].restaurant_id").value(restaurantId))
+                .andExpect(jsonPath("$.data[2].restaurant_id").value(restaurantId));
     }
 }

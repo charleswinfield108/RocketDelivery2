@@ -5,11 +5,13 @@ import com.rocketFoodDelivery.rocketFood.exception.BadRequestException;
 import com.rocketFoodDelivery.rocketFood.models.Address;
 import com.rocketFoodDelivery.rocketFood.service.AddressService;
 import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -48,12 +50,17 @@ public class AddressApiController {
      */
     @PostMapping("/address")
     @PreAuthorize("permitAll")
-    public ResponseEntity<Object> createAddress(@RequestBody ApiAddressDTO addressDTO) {
+    public ResponseEntity<Object> createAddress(@Valid @RequestBody ApiAddressDTO addressDTO, BindingResult result) {
         logger.debug("Creating new address: street={}, city={}, postalCode={}",
                 addressDTO.getStreetAddress(), addressDTO.getCity(), addressDTO.getPostalCode());
         
-        // Validate required fields
-        validateAddressDTO(addressDTO);
+        // Check validation errors
+        if (result.hasErrors()) {
+            @SuppressWarnings("null")
+            String errorMessage = result.getFieldError() != null ? result.getFieldError().getDefaultMessage() : "Validation failed";
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error(errorMessage, "BAD_REQUEST"));
+        }
 
         // Create address using service layer (parameterized queries, no SQL concatenation)
         Address createdAddress = addressService.createAddress(

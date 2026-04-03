@@ -8,11 +8,13 @@ import com.rocketFoodDelivery.rocketFood.service.OrderService;
 import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
 import com.rocketFoodDelivery.rocketFood.dtos.UpdateOrderStatusRequestDTO;
 import com.rocketFoodDelivery.rocketFood.dtos.OrderStatusResponseDTO;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -54,7 +56,7 @@ public class OrdersApiController {
      */
     @GetMapping("/orders")
     @PreAuthorize("permitAll")
-    public ResponseEntity<ApiResponseDTO> getOrders(
+    public ResponseEntity<Object> getOrders(
             @RequestParam(value = "type", required = false) String type,
             @RequestParam(value = "id", required = false) String idParam) {
         
@@ -88,7 +90,7 @@ public class OrdersApiController {
             List<ApiOrderDTO> orders = orderService.getOrdersByType(normalizedType, id);
             log.info("GET /api/orders - Retrieved {} orders for type: {}, id: {}", 
                     orders.size(), normalizedType, id);
-            return ResponseEntity.ok(ResponseBuilder.success(orders, "Orders retrieved successfully"));
+            return ResponseBuilder.buildOkResponse(orders);
         } catch (IllegalArgumentException e) {
             log.warn("GET /api/orders - Invalid type: {}", type);
             return ResponseEntity.badRequest()
@@ -114,16 +116,23 @@ public class OrdersApiController {
      */
     @PostMapping("/orders")
     @PreAuthorize("permitAll")
-    public ResponseEntity<ApiResponseDTO> createOrder(@RequestBody ApiCreateOrderRequestDTO request) {
+    public ResponseEntity<Object> createOrder(@Valid @RequestBody ApiCreateOrderRequestDTO request, BindingResult result) {
         log.debug("POST /api/orders - customer_id: {}, restaurant_id: {}, products size: {}",
-                request.getCustomer_id(), request.getRestaurant_id(), 
+                request.getCustomerId(), request.getRestaurantId(), 
                 request.getProducts() != null ? request.getProducts().size() : 0);
+        
+        // Check validation errors
+        if (result.hasErrors()) {
+            @SuppressWarnings("null")
+            String errorMessage = result.getFieldError() != null ? result.getFieldError().getDefaultMessage() : "Validation failed";
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error(errorMessage, "BAD_REQUEST"));
+        }
         
         try {
             ApiOrderDTO createdOrder = orderService.createOrder(request);
             log.info("POST /api/orders - Order created successfully with id: {}", createdOrder.getId());
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ResponseBuilder.success(createdOrder, "Order created successfully"));
+            return ResponseBuilder.buildCreatedResponse(createdOrder);
         } catch (ResourceNotFoundException e) {
             log.warn("POST /api/orders - Resource not found: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -150,7 +159,7 @@ public class OrdersApiController {
      */
     @DeleteMapping("/order/{id}")
     @PreAuthorize("permitAll")
-    public ResponseEntity<ApiResponseDTO> deleteOrder(
+    public ResponseEntity<Object> deleteOrder(
             @PathVariable(value = "id") String idParam) {
         
         log.debug("DELETE /api/order/{id} - id: {}", idParam);
@@ -165,7 +174,7 @@ public class OrdersApiController {
         try {
             orderService.deleteOrder(id);
             log.info("DELETE /api/order/{id} - Order deleted successfully: {}", id);
-            return ResponseEntity.ok(ResponseBuilder.success("", "Order deleted successfully"));
+            return ResponseBuilder.buildOkResponse("");
         } catch (ResourceNotFoundException e) {
             log.warn("DELETE /api/order/{id} - {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -186,7 +195,7 @@ public class OrdersApiController {
      */
     @PostMapping("/order/{id}/status")
     @PreAuthorize("permitAll")
-    public ResponseEntity<?> updateOrderStatus(
+    public ResponseEntity<Object> updateOrderStatus(
             @PathVariable(value = "id") String idParam,
             @RequestBody UpdateOrderStatusRequestDTO request) {
         
@@ -214,7 +223,7 @@ public class OrdersApiController {
             OrderStatusResponseDTO response = OrderStatusResponseDTO.builder()
                     .status(request.getStatus())
                     .build();
-            return ResponseEntity.ok(response);
+            return ResponseBuilder.buildOkResponse(response);
         } catch (ResourceNotFoundException e) {
             log.warn("POST /api/order/{id}/status - {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

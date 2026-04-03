@@ -159,16 +159,16 @@ public class OrderStatusUpdateTest {
         testOrder1 = Order.builder()
                 .customer(customer)
                 .restaurant(restaurant)
-                .order_status(pendingStatus)
-                .restaurant_rating(4)
+                .orderStatus(pendingStatus)
+                .restaurantRating(4)
                 .build();
         orderRepository.save(testOrder1);
 
         testOrder2 = Order.builder()
                 .customer(customer)
                 .restaurant(restaurant)
-                .order_status(pendingStatus)
-                .restaurant_rating(3)
+                .orderStatus(pendingStatus)
+                .restaurantRating(3)
                 .build();
         orderRepository.save(testOrder2);
     }
@@ -188,7 +188,7 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("delivered"));
+                .andExpect(jsonPath("$.data.status").value("delivered"));
     }
 
     /**
@@ -204,7 +204,7 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("pending"));
+                .andExpect(jsonPath("$.data.status").value("pending"));
     }
 
     /**
@@ -220,7 +220,7 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("in progress"));
+                .andExpect(jsonPath("$.data.status").value("in progress"));
     }
 
     /**
@@ -236,7 +236,7 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("cancelled"));
+                .andExpect(jsonPath("$.data.status").value("cancelled"));
     }
 
     // ==================== REQUEST BODY VALIDATION TESTS ====================
@@ -374,8 +374,8 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").exists())
-                .andExpect(jsonPath("$.status").isString());
+                .andExpect(jsonPath("$.data.status").exists())
+                .andExpect(jsonPath("$.data.status").isString());
     }
 
     /**
@@ -392,7 +392,7 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(statusValue));
+                .andExpect(jsonPath("$.data.status").value(statusValue));
     }
 
     // ==================== DATABASE VERIFICATION TESTS ====================
@@ -414,8 +414,8 @@ public class OrderStatusUpdateTest {
                     // Verify in database
                     Order dbOrder = orderRepository.findById(testOrder1.getId()).orElse(null);
                     assertNotNull(dbOrder, "Order should exist in database");
-                    assertNotNull(dbOrder.getOrder_status(), "Order status should not be null");
-                    assertTrue("delivered".equalsIgnoreCase(dbOrder.getOrder_status().getName()),
+                    assertNotNull(dbOrder.getOrderStatus(), "Order status should not be null");
+                    assertTrue("delivered".equalsIgnoreCase(dbOrder.getOrderStatus().getName()),
                             "Order status should be DELIVERED in database");
                 });
     }
@@ -433,7 +433,7 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody1)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("in progress"));
+                .andExpect(jsonPath("$.data.status").value("in progress"));
 
         // Second update to DELIVERED
         Map<String, String> requestBody2 = new HashMap<>();
@@ -442,12 +442,12 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody2)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("delivered"));
+                .andExpect(jsonPath("$.data.status").value("delivered"));
 
         // Verify final state in database
         Order dbOrder = orderRepository.findById(testOrder1.getId()).orElse(null);
         assertNotNull(dbOrder, "Order should exist");
-        assertEquals("delivered", dbOrder.getOrder_status().getName().toLowerCase(),
+        assertEquals("delivered", dbOrder.getOrderStatus().getName().toLowerCase(),
                 "Final status should be DELIVERED");
     }
 
@@ -465,14 +465,14 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("pending"));
+                .andExpect(jsonPath("$.data.status").value("pending"));
 
         // Second update to same status (should still succeed)
         mockMvc.perform(post("/api/order/" + testOrder1.getId() + "/status")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("pending"));
+                .andExpect(jsonPath("$.data.status").value("pending"));
     }
 
     /**
@@ -492,12 +492,12 @@ public class OrderStatusUpdateTest {
 
         // Verify order 1 updated
         Order order1 = orderRepository.findById(testOrder1.getId()).orElse(null);
-        assertEquals("delivered", order1.getOrder_status().getName().toLowerCase(),
+        assertEquals("delivered", order1.getOrderStatus().getName().toLowerCase(),
                 "Order 1 status should be DELIVERED");
 
         // Verify order 2 unchanged
         Order order2 = orderRepository.findById(testOrder2.getId()).orElse(null);
-        assertEquals("pending", order2.getOrder_status().getName().toLowerCase(),
+        assertEquals("pending", order2.getOrderStatus().getName().toLowerCase(),
                 "Order 2 status should still be PENDING");
     }
 
@@ -516,7 +516,7 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("out for delivery"));
+                .andExpect(jsonPath("$.data.status").value("out for delivery"));
     }
 
     /**
@@ -532,7 +532,7 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("ready for pickup"));
+                .andExpect(jsonPath("$.data.status").value("ready for pickup"));
     }
 
     /**
@@ -548,7 +548,7 @@ public class OrderStatusUpdateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("DELIVERED"));
+                .andExpect(jsonPath("$.data.status").value("DELIVERED"));
     }
 
     /**
@@ -580,6 +580,6 @@ public class OrderStatusUpdateTest {
                 .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", not(isA(java.util.List.class)))) // Not a list
-                .andExpect(jsonPath("$.status").exists()); // Has status field
+                .andExpect(jsonPath("$.data.status").exists()); // Has status field
     }
 }

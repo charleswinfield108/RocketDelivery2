@@ -24,9 +24,9 @@ public interface ProductOrderRepository extends JpaRepository<ProductOrder, Inte
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        DELETE FROM product_orders WHERE order_id = ?1
+        DELETE FROM product_orders WHERE order_id = :orderId
     """)
-    void deleteProductOrdersByOrderId(@Param("orderId") int orderId);
+    int deleteProductOrdersByOrderId(@Param("orderId") int orderId);
 
     /**
      * Deletes all ProductOrder entries associated with a specific restaurant.
@@ -39,10 +39,10 @@ public interface ProductOrderRepository extends JpaRepository<ProductOrder, Inte
     @Transactional
     @Query(nativeQuery = true, value = """
         DELETE FROM product_orders WHERE order_id IN (
-            SELECT id FROM orders WHERE restaurant_id = ?1
+            SELECT id FROM orders WHERE restaurant_id = :restaurantId
         )
     """)
-    void deleteProductOrdersByRestaurant(@Param("restaurantId") int restaurantId);
+    int deleteProductOrdersByRestaurant(@Param("restaurantId") int restaurantId);
 
     List<ProductOrder> findByOrderId(int id);
     List<ProductOrder> findByProductId(int id);

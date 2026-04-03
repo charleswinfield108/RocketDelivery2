@@ -1,5 +1,8 @@
 package com.rocketFoodDelivery.rocketFood.dtos;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,8 +23,18 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApiCreateOrderRequestDTO {
-    private int customer_id;
-    private int restaurant_id;
+    @JsonProperty("customer_id")
+    @Positive(message = "Customer ID must be greater than 0")
+    private int customerId;
+
+    @JsonProperty("restaurant_id")
+    @Positive(message = "Restaurant ID must be greater than 0")
+    private int restaurantId;
+
+    @NotEmpty(message = "Products list cannot be empty")
     private List<ApiProductItemDTO> products;
-    private long total_cost;
+
+    @JsonProperty("total_cost")
+    @Positive(message = "Total cost must be greater than 0")
+    private long totalCost;
 }

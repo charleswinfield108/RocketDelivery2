@@ -2,7 +2,7 @@ package com.rocketFoodDelivery.rocketFood.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,13 +16,13 @@ public class ApiAddressDTO {
     private int id;
 
     @JsonProperty("street_address")
-    @NotNull
+    @NotBlank(message = "Street address is required")
     private String streetAddress;
 
-    @NotNull
+    @NotBlank(message = "City is required")
     private String city;
 
     @JsonProperty("postal_code")
-    @NotNull
+    @NotBlank(message = "Postal code is required")
     private String postalCode;
 }

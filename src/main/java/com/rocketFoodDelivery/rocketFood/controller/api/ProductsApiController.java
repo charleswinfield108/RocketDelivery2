@@ -46,7 +46,7 @@ public class ProductsApiController {
      */
     @GetMapping("/products")
     @PreAuthorize("permitAll")
-    public ResponseEntity<ApiResponseDTO> getProducts(
+    public ResponseEntity<Object> getProducts(
             @RequestParam(value = "restaurant", required = false) String restaurantParam) {
         
         log.debug("GET /api/products - restaurant: {}", restaurantParam);
@@ -70,7 +70,7 @@ public class ProductsApiController {
             List<ApiProductDTO> products = productService.getProductsByRestaurant(restaurantId);
             log.info("GET /api/products - Retrieved {} products for restaurant ID: {}", 
                     products.size(), restaurantId);
-            return ResponseEntity.ok(ResponseBuilder.success(products, "Success"));
+            return ResponseBuilder.buildOkResponse(products);
         } catch (ResourceNotFoundException e) {
             log.warn("GET /api/products - {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -94,7 +94,7 @@ public class ProductsApiController {
      */
     @DeleteMapping("/products")
     @PreAuthorize("permitAll")
-    public ResponseEntity<ApiResponseDTO> deleteProducts(
+    public ResponseEntity<Object> deleteProducts(
             @RequestParam(value = "restaurant", required = false) String restaurantParam) {
         
         log.debug("DELETE /api/products - restaurant: {}", restaurantParam);
@@ -118,9 +118,8 @@ public class ProductsApiController {
             int deletedCount = productService.deleteProductsByRestaurant(restaurantId);
             log.info("DELETE /api/products - Deleted {} products for restaurant ID: {}", 
                     deletedCount, restaurantId);
-            return ResponseEntity.ok(ResponseBuilder.success(
-                    "Deleted " + deletedCount + " products for restaurant " + restaurantId, 
-                    "Success"));
+            return ResponseBuilder.buildOkResponse(
+                    "Deleted " + deletedCount + " products for restaurant " + restaurantId);
         } catch (ResourceNotFoundException e) {
             log.warn("DELETE /api/products - {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

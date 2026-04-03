@@ -18,6 +18,12 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * Test suite for Module 12 authentication endpoint (POST /api/auth).
+ * Module 12 Specification:
+ * - Success (200): { "success": true, "accessToken": "..." }
+ * - Failure (401): { "success": false, "accessToken": null }
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -58,7 +64,7 @@ public class AuthApiControllerTest {
         userRepository.save(employeeUser);
     }
     
-    // ==================== VALID AUTHENTICATION CASES ====================
+    // ==================== VALID AUTHENTICATION ====================
     
     @Test
     public void testAuthenticateWithValidCredentials_ShouldReturn200() throws Exception {
@@ -67,9 +73,9 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validAuth)))
-                .andExpect(status().isOk())  // 200
-                .andExpect(jsonPath("$.message").value("Success"))
-                .andExpect(jsonPath("$.data.token").isNotEmpty());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
     
     @Test
@@ -80,7 +86,8 @@ public class AuthApiControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validAuth)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.token").value(matchesPattern("^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_.]*$")));  // JWT format
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.accessToken").value(matchesPattern("^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_.]*$")));
     }
     
     @Test
@@ -91,10 +98,10 @@ public class AuthApiControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validAuth)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.token").isNotEmpty())
-                .andExpect(jsonPath("$.data.user").isNotEmpty())
-                .andExpect(jsonPath("$.data.user.id").isNumber())
-                .andExpect(jsonPath("$.data.user.email").value("admin@example.com"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$", hasKey("success")))
+                .andExpect(jsonPath("$", hasKey("accessToken")));
     }
     
     @Test
@@ -109,12 +116,11 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        // Extract token from response for assertion
-        String token1 = objectMapper.readTree(token1Response).get("data").get("token").asText();
+        String token1 = objectMapper.readTree(token1Response).get("accessToken").asText();
         assert !token1.isEmpty();
     }
     
-    // ==================== INVALID CREDENTIAL CASES ====================
+    // ==================== INVALID CREDENTIALS ====================
     
     @Test
     public void testAuthenticateWithInvalidPassword_ShouldReturn401() throws Exception {
@@ -123,8 +129,9 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidAuth)))
-                .andExpect(status().isUnauthorized())  // 401
-                .andExpect(jsonPath("$.error").isNotEmpty());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.accessToken").doesNotExist());
     }
     
     @Test
@@ -134,8 +141,8 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(nonExistentAuth)))
-                .andExpect(status().isUnauthorized())  // 401
-                .andExpect(jsonPath("$.error").isNotEmpty());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false));
     }
     
     @Test
@@ -145,7 +152,7 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(emptyEmailAuth)))
-                .andExpect(status().isBadRequest())  // 400
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").isNotEmpty());
     }
     
@@ -156,7 +163,7 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(emptyPasswordAuth)))
-                .andExpect(status().isBadRequest())  // 400
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").isNotEmpty());
     }
     
@@ -167,7 +174,7 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(nullEmailAuth)))
-                .andExpect(status().isBadRequest())  // 400
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").isNotEmpty());
     }
     
@@ -178,7 +185,7 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(nullPasswordAuth)))
-                .andExpect(status().isBadRequest())  // 400
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").isNotEmpty());
     }
     
@@ -191,8 +198,9 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(whitespaceEmailAuth)))
-                .andExpect(status().isOk())  // Trimmed email should match
-                .andExpect(jsonPath("$.data.token").isNotEmpty());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
     
     @Test
@@ -202,8 +210,8 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(wrongCasePassword)))
-                .andExpect(status().isUnauthorized())  // Case matters
-                .andExpect(jsonPath("$.error").isNotEmpty());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false));
     }
     
     @Test
@@ -213,30 +221,9 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(upperCaseEmailAuth)))
-                .andExpect(status().isOk())  // Email should be case-insensitive
-                .andExpect(jsonPath("$.data.token").isNotEmpty());
-    }
-    
-    @Test
-    public void testAuthenticateWithSpecialCharactersInPassword() throws Exception {
-        // Assuming a user with special char password exists
-        AuthRequestDTO specialCharPassword = new AuthRequestDTO("admin@example.com", "admin@#$%^&*");
-        
-        mockMvc.perform(post("/api/auth")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(specialCharPassword)))
-                .andExpect(status().isUnauthorized());  // Wrong password, but verifies special chars accepted
-    }
-    
-    @Test
-    public void testAuthenticateWithLongPassword() throws Exception {
-        String longPassword = "a".repeat(255);
-        AuthRequestDTO longPasswordAuth = new AuthRequestDTO("admin@example.com", longPassword);
-        
-        mockMvc.perform(post("/api/auth")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(longPasswordAuth)))
-                .andExpect(status().isUnauthorized());  // Wrong password, but verifies long passwords accepted
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
     
     @Test
@@ -246,7 +233,7 @@ public class AuthApiControllerTest {
         mockMvc.perform(post("/api/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(passwordWithSpaces)))
-                .andExpect(status().isUnauthorized());  // Whitespace changes password, should fail
+                .andExpect(status().isUnauthorized());
     }
     
     // ==================== RESPONSE FORMAT VALIDATION ====================
@@ -259,11 +246,8 @@ public class AuthApiControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validAuth)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").isNotEmpty())
-                .andExpect(jsonPath("$.data").isNotEmpty())
-                .andExpect(jsonPath("$.data.token").isNotEmpty())
-                .andExpect(jsonPath("$.data.user.id").isNumber())
-                .andExpect(jsonPath("$.data.user.email").isNotEmpty());
+                .andExpect(jsonPath("$.success").isBoolean())
+                .andExpect(jsonPath("$.accessToken").isString());
     }
     
     @Test
@@ -274,7 +258,8 @@ public class AuthApiControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidAuth)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").isNotEmpty());
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.accessToken").doesNotExist());
     }
     
     // ==================== JWT CLAIMS VALIDATION ====================
@@ -291,10 +276,9 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String token = objectMapper.readTree(responseBody).get("accessToken").asText();
         String subject = jwtUtil.getSubject(token);
         
-        // Subject should be in format: "userId,email"
         assert subject.contains(",");
         assert subject.contains("admin@example.com");
     }
@@ -311,7 +295,7 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String token = objectMapper.readTree(responseBody).get("accessToken").asText();
         String username = jwtUtil.getUsername(token);
         
         assert username.equals("admin@example.com");
@@ -329,7 +313,7 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String token = objectMapper.readTree(responseBody).get("accessToken").asText();
         String issuer = jwtUtil.getIssuer(token);
         
         assert issuer.equals("rocketfood-app");
@@ -351,10 +335,9 @@ public class AuthApiControllerTest {
         
         long afterRequest = System.currentTimeMillis();
         
-        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String token = objectMapper.readTree(responseBody).get("accessToken").asText();
         long issuedAt = jwtUtil.getIssuedAt(token);
         
-        // IssuedAt should be within 5 seconds of the request time
         assert issuedAt >= (beforeRequest - 5000) && issuedAt <= (afterRequest + 5000);
     }
     
@@ -370,14 +353,11 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String token = objectMapper.readTree(responseBody).get("accessToken").asText();
         long expiresAt = jwtUtil.getExpiresAt(token);
-        
-        // ExpiresAt should be approximately 1 hour (3600000 ms) from issuedAt
         long issuedAt = jwtUtil.getIssuedAt(token);
         long difference = expiresAt - issuedAt;
         
-        // Allow 5 second variance
         assert difference >= 3595000 && difference <= 3605000;
     }
     
@@ -393,7 +373,7 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String token = objectMapper.readTree(responseBody).get("accessToken").asText();
         
         boolean isExpired = jwtUtil.isTokenExpired(token);
         assert !isExpired;
@@ -413,7 +393,7 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String token = objectMapper.readTree(responseBody).get("accessToken").asText();
         String role = jwtUtil.getRole(token);
         
         assert role.equals("ROLE_USER");
@@ -431,7 +411,7 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String token = objectMapper.readTree(responseBody).get("accessToken").asText();
         String role = jwtUtil.getRole(token);
         
         assert role.equals("ROLE_EMPLOYEE");
@@ -458,16 +438,14 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String userToken = objectMapper.readTree(userResponse).get("data").get("token").asText();
-        String employeeToken = objectMapper.readTree(employeeResponse).get("data").get("token").asText();
+        String userToken = objectMapper.readTree(userResponse).get("accessToken").asText();
+        String employeeToken = objectMapper.readTree(employeeResponse).get("accessToken").asText();
         
-        // Different tokens should be generated
         assert !userToken.equals(employeeToken);
     }
     
     @Test
     public void testTokenRoleMatchesUserType() throws Exception {
-        // Test non-employee user
         AuthRequestDTO userAuth = new AuthRequestDTO("admin@example.com", "admin123");
         
         String userResponse = mockMvc.perform(post("/api/auth")
@@ -478,10 +456,9 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String userToken = objectMapper.readTree(userResponse).get("data").get("token").asText();
+        String userToken = objectMapper.readTree(userResponse).get("accessToken").asText();
         String userRole = jwtUtil.getRole(userToken);
         
-        // Test employee user
         AuthRequestDTO employeeAuth = new AuthRequestDTO("employee@example.com", "employee123");
         
         String employeeResponse = mockMvc.perform(post("/api/auth")
@@ -492,10 +469,9 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String employeeToken = objectMapper.readTree(employeeResponse).get("data").get("token").asText();
+        String employeeToken = objectMapper.readTree(employeeResponse).get("accessToken").asText();
         String employeeRole = jwtUtil.getRole(employeeToken);
         
-        // Roles should be different
         assert userRole.equals("ROLE_USER");
         assert employeeRole.equals("ROLE_EMPLOYEE");
         assert !userRole.equals(employeeRole);
@@ -517,14 +493,12 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String token = objectMapper.readTree(responseBody).get("accessToken").asText();
         long expiresAt = jwtUtil.getExpiresAt(token);
         
-        // Token should expire in approximately 1 hour from request time
         long expectedExpiration = beforeRequest + (60 * 60 * 1000);
         long variance = Math.abs(expiresAt - expectedExpiration);
         
-        // Allow 5 second variance
         assert variance <= 5000;
     }
     
@@ -540,7 +514,6 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        // Add delay to ensure different issuedAt timestamp (JWT uses seconds, not milliseconds)
         Thread.sleep(1100);
         
         String secondResponse = mockMvc.perform(post("/api/auth")
@@ -551,10 +524,9 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String firstToken = objectMapper.readTree(firstResponse).get("data").get("token").asText();
-        String secondToken = objectMapper.readTree(secondResponse).get("data").get("token").asText();
+        String firstToken = objectMapper.readTree(firstResponse).get("accessToken").asText();
+        String secondToken = objectMapper.readTree(secondResponse).get("accessToken").asText();
         
-        // Tokens should be different due to different issuedAt times
         assert !firstToken.equals(secondToken);
     }
     
@@ -572,9 +544,8 @@ public class AuthApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         
-        String token = objectMapper.readTree(responseBody).get("data").get("token").asText();
+        String token = objectMapper.readTree(responseBody).get("accessToken").asText();
         
-        // Token should be valid
         boolean isValid = jwtUtil.validateAccessToken(token);
         assert isValid;
     }

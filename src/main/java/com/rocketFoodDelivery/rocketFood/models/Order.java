@@ -36,15 +36,15 @@ public class Order {
     @OnDelete(action = OnDeleteAction.CASCADE)
 
     @JoinColumn(name = "status_id", nullable = false)
-    private OrderStatus order_status ;
+    private OrderStatus orderStatus;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "courier_id")
     private Courier courier;
 
-    @Column(nullable = false)
+    @Column(name = "restaurant_rating", nullable = false)
     @Min(1)
     @Max(5)
-    private int restaurant_rating;
+    private int restaurantRating;
 }

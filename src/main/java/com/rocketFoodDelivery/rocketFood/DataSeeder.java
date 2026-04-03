@@ -335,9 +335,9 @@ public class DataSeeder {
            Order order = Order.builder()
                    .restaurant(restaurants.get(random.nextInt(restaurants.size())))
                    .customer(customers.get(random.nextInt(customers.size())))
-                   .order_status(orderStatus)
+                   .orderStatus(orderStatus)
                    .courier(courier)
-                   .restaurant_rating(random.nextInt(5) + 1)
+                   .restaurantRating(random.nextInt(5) + 1)
                    .build();
            orderRepository.save(order);
            
@@ -351,8 +351,8 @@ public class DataSeeder {
                    productOrderRepository.save(ProductOrder.builder()
                            .product(product)
                            .order(order)
-                           .product_quantity(random.nextInt(3) + 1)
-                           .product_unit_cost(product.getCost())
+                           .productQuantity(random.nextInt(3) + 1)
+                           .productUnitCost(product.getCost())
                            .build());
                    totalProductOrders++;
                } catch (Exception e) {

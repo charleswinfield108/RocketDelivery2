@@ -1,5 +1,6 @@
 package com.rocketFoodDelivery.rocketFood.dtos;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +15,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApiProductItemDTO {
-    private int product_id;
-    private int product_quantity;
+    @JsonProperty("id")
+    private int id;
+
+    @JsonProperty("quantity")
+    private int quantity;
 }

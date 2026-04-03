@@ -545,10 +545,13 @@ public class RestaurantApiControllerTest {
 
     @Test
     public void testDeleteRestaurant_Success() throws Exception {
+        ApiRestaurantDTO mockRestaurant = new ApiRestaurantDTO(1, "Test Restaurant", 2, 4);
+        when(restaurantService.findRestaurantWithAverageRatingById(1))
+                .thenReturn(Optional.of(mockRestaurant));
         doNothing().when(restaurantService).deleteRestaurant(1);
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/1"))
-                .andExpect(MockMvcResultMatchers.status().isNoContent());
+                .andExpect(MockMvcResultMatchers.status().isOk());
     }
 
     @Test
@@ -579,24 +582,33 @@ public class RestaurantApiControllerTest {
 
     @Test
     public void testDeleteRestaurant_CascadeDelete() throws Exception {
+        ApiRestaurantDTO mockRestaurant = new ApiRestaurantDTO(1, "Test Restaurant", 2, 4);
+        when(restaurantService.findRestaurantWithAverageRatingById(1))
+                .thenReturn(Optional.of(mockRestaurant));
         doNothing().when(restaurantService).deleteRestaurant(1);
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/1"))
-                .andExpect(MockMvcResultMatchers.status().isNoContent());
+                .andExpect(MockMvcResultMatchers.status().isOk());
         
         verify(restaurantService, times(1)).deleteRestaurant(1);
     }
 
     @Test
     public void testDeleteRestaurant_LargeId() throws Exception {
+        ApiRestaurantDTO mockRestaurant = new ApiRestaurantDTO(999999, "Large ID Restaurant", 3, 5);
+        when(restaurantService.findRestaurantWithAverageRatingById(999999))
+                .thenReturn(Optional.of(mockRestaurant));
         doNothing().when(restaurantService).deleteRestaurant(999999);
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/999999"))
-                .andExpect(MockMvcResultMatchers.status().isNoContent());
+                .andExpect(MockMvcResultMatchers.status().isOk());
     }
 
     @Test
     public void testDeleteRestaurant_ServiceError() throws Exception {
+        ApiRestaurantDTO mockRestaurant = new ApiRestaurantDTO(1, "Test Restaurant", 2, 4);
+        when(restaurantService.findRestaurantWithAverageRatingById(1))
+                .thenReturn(Optional.of(mockRestaurant));
         doThrow(new RuntimeException("Database error")).when(restaurantService).deleteRestaurant(1);
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/1"))
@@ -605,13 +617,19 @@ public class RestaurantApiControllerTest {
 
     @Test
     public void testDeleteRestaurant_MultipleDeletes() throws Exception {
+        ApiRestaurantDTO mockRestaurant1 = new ApiRestaurantDTO(1, "Restaurant 1", 2, 4);
+        ApiRestaurantDTO mockRestaurant2 = new ApiRestaurantDTO(2, "Restaurant 2", 3, 5);
+        when(restaurantService.findRestaurantWithAverageRatingById(1))
+                .thenReturn(Optional.of(mockRestaurant1));
+        when(restaurantService.findRestaurantWithAverageRatingById(2))
+                .thenReturn(Optional.of(mockRestaurant2));
         doNothing().when(restaurantService).deleteRestaurant(anyInt());
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/1"))
-                .andExpect(MockMvcResultMatchers.status().isNoContent());
+                .andExpect(MockMvcResultMatchers.status().isOk());
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/2"))
-                .andExpect(MockMvcResultMatchers.status().isNoContent());
+                .andExpect(MockMvcResultMatchers.status().isOk());
 
         verify(restaurantService, times(2)).deleteRestaurant(anyInt());
     }

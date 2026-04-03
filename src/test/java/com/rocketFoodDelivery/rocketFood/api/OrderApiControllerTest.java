@@ -395,7 +395,7 @@ public class OrderApiControllerTest {
                 List.of(createProductItem(testProduct1.getId(), 1)),
                 1000
         );
-        request.setCustomer_id(0);
+        request.setCustomerId(0);
 
         mockMvc.perform(post("/api/orders")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -412,7 +412,7 @@ public class OrderApiControllerTest {
                 List.of(createProductItem(testProduct1.getId(), 1)),
                 1000
         );
-        request.setRestaurant_id(0);
+        request.setRestaurantId(0);
 
         mockMvc.perform(post("/api/orders")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -461,7 +461,7 @@ public class OrderApiControllerTest {
                 List.of(createProductItem(testProduct1.getId(), 1)),
                 1000
         );
-        request.setTotal_cost(0);
+        request.setTotalCost(0);
 
         mockMvc.perform(post("/api/orders")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -659,10 +659,10 @@ public class OrderApiControllerTest {
             List<ApiProductItemDTO> products,
             long totalCost) {
         ApiCreateOrderRequestDTO request = new ApiCreateOrderRequestDTO();
-        request.setCustomer_id(customerId);
-        request.setRestaurant_id(restaurantId);
+        request.setCustomerId(customerId);
+        request.setRestaurantId(restaurantId);
         request.setProducts(products);
-        request.setTotal_cost(totalCost);
+        request.setTotalCost(totalCost);
         return request;
     }
 
@@ -671,8 +671,8 @@ public class OrderApiControllerTest {
      */
     private ApiProductItemDTO createProductItem(int productId, int quantity) {
         ApiProductItemDTO item = new ApiProductItemDTO();
-        item.setProduct_id(productId);
-        item.setProduct_quantity(quantity);
+        item.setId(productId);
+        item.setQuantity(quantity);
         return item;
     }
 }

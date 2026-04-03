@@ -31,7 +31,7 @@ public interface AddressRepository extends JpaRepository<Address, Integer> {
         INSERT INTO addresses (street_address, city, postal_code)
         VALUES (?1, ?2, ?3)
     """)
-    void saveAddress(String streetAddress, String city, String postalCode);
+    int saveAddress(String streetAddress, String city, String postalCode);
     
     @Query(nativeQuery = true, value = """
         SELECT LAST_INSERT_ID() AS id

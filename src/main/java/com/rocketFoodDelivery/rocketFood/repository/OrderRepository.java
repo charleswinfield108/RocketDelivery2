@@ -22,11 +22,6 @@ import java.util.List;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
     
-    // Legacy finder methods (kept for backward compatibility)
-    List<Order> findByCustomerId(int id);
-    List<Order> findByRestaurantId(int id);
-    List<Order> findByCourierId(int id);
-
     /**
      * Retrieves all orders for a specific restaurant using native SQL.
      * 
@@ -40,7 +35,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Query(nativeQuery = true, value = """
         SELECT o.id, o.restaurant_id, o.customer_id, o.courier_id, o.status_id, o.restaurant_rating
         FROM orders o
-        WHERE o.restaurant_id = ?1
+        WHERE o.restaurant_id = :restaurantId
     """)
     List<Order> findOrdersByRestaurantId(@Param("restaurantId") int restaurantId);
 
@@ -56,7 +51,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Query(nativeQuery = true, value = """
         SELECT o.id, o.restaurant_id, o.customer_id, o.courier_id, o.status_id, o.restaurant_rating
         FROM orders o
-        WHERE o.customer_id = ?1
+        WHERE o.customer_id = :customerId
     """)
     List<Order> findOrdersByCustomerId(@Param("customerId") int customerId);
 
@@ -72,7 +67,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Query(nativeQuery = true, value = """
         SELECT o.id, o.restaurant_id, o.customer_id, o.courier_id, o.status_id, o.restaurant_rating
         FROM orders o
-        WHERE o.courier_id = ?1
+        WHERE o.courier_id = :courierId
     """)
     List<Order> findOrdersByCourierId(@Param("courierId") int courierId);
 
@@ -90,9 +85,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        DELETE FROM product_orders WHERE order_id = ?1
+        DELETE FROM product_orders WHERE order_id = :orderId
     """)
-    void deleteProductOrdersByOrderId(@Param("orderId") int orderId);
+    int deleteProductOrdersByOrderId(@Param("orderId") int orderId);
 
     /**
      * Deletes an order by ID using native SQL.
@@ -109,10 +104,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """  
-        DELETE FROM orders WHERE id = ?1
+        DELETE FROM orders WHERE id = :orderId
     """)
-    void deleteOrderById(@Param("orderId") int orderId);
-
+    int deleteOrderById(@Param("orderId") int orderId);
     /**
      * Deletes all orders for a specific restaurant using native SQL.
      * This is a cascade delete operation used when a restaurant is deleted.
@@ -126,7 +120,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = """
-        DELETE FROM orders WHERE restaurant_id = ?1
+        DELETE FROM orders WHERE restaurant_id = :restaurantId
     """)
-    void deleteByRestaurantId(@Param("restaurantId") int restaurantId);
+    int deleteByRestaurantId(@Param("restaurantId") int restaurantId);
 }

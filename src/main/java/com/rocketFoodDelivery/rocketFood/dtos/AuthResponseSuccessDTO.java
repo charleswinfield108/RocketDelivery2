@@ -1,5 +1,6 @@
 package com.rocketFoodDelivery.rocketFood.dtos;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,13 @@ import lombok.Setter;
 public class AuthResponseSuccessDTO {
     private String accessToken;
     private boolean success;
-    private int user_id;
-    private int customer_id;
-    private int courier_id;
+
+    @JsonProperty("user_id")
+    private int userId;
+
+    @JsonProperty("customer_id")
+    private int customerId;
+
+    @JsonProperty("courier_id")
+    private int courierId;
 }

@@ -1,15 +1,19 @@
 package com.rocketFoodDelivery.rocketFood.controller.api;
 
-import com.rocketFoodDelivery.rocketFood.dtos.ApiResponseDTO;
 import com.rocketFoodDelivery.rocketFood.dtos.AuthRequestDTO;
+import com.rocketFoodDelivery.rocketFood.dtos.AuthResponseDTO;
 import com.rocketFoodDelivery.rocketFood.exception.BadRequestException;
+import com.rocketFoodDelivery.rocketFood.exception.UnauthorizedException;
 import com.rocketFoodDelivery.rocketFood.models.UserEntity;
 import com.rocketFoodDelivery.rocketFood.service.AuthService;
 import com.rocketFoodDelivery.rocketFood.security.JwtUtil;
+import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,74 +37,48 @@ public class AuthApiController {
     
     /**
      * Authenticates a user and returns JWT token.
-     * Throws BadRequestException for invalid input (caught by GlobalExceptionHandler → 400)
-     * Throws UnauthorizedException for invalid credentials (caught by GlobalExceptionHandler → 401)
+     * Returns Module 12 specification format: { "success": true, "accessToken": "..." }
      * 
      * @param authRequest containing email and password
-     * @return ResponseEntity with token and user details on success
+     * @return ResponseEntity with success status and access token
      */
     @PostMapping("/auth")
     @PreAuthorize("permitAll")
-    public ResponseEntity<Object> authenticate(@RequestBody AuthRequestDTO authRequest) {
+    public ResponseEntity<Object> authenticate(@Valid @RequestBody AuthRequestDTO authRequest, BindingResult result) {
         log.debug("Authentication request received for email: {}", 
                 authRequest.getEmail() != null ? authRequest.getEmail() : "null");
         
-        // Validate input - throws BadRequestException if invalid (400)
-        validateAuthRequest(authRequest);
-        
-        // Authenticate user - throws UnauthorizedException if invalid credentials (401)
-        UserEntity user = authService.authenticate(authRequest);
-        
-        // Generate JWT token
-        String token = jwtUtil.generateAccessToken(user);
-        
-        // Build response
-        ApiResponseDTO response = new ApiResponseDTO();
-        response.setMessage("Success");
-        
-        Map<String, Object> data = new HashMap<>();
-        data.put("token", token);
-        
-        // User data
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("id", user.getId());
-        userData.put("email", user.getEmail());
-        userData.put("name", user.getName());
-        data.put("user", userData);
-        
-        response.setData(data);
-        
-        log.info("User authenticated successfully: {}", user.getEmail());
-        return ResponseEntity.ok(response);
-    }
-    
-    /**
-     * Validates authentication request fields.
-     * 
-     * @param authRequest the authentication request
-     * @throws BadRequestException if validation fails
-     */
-    private void validateAuthRequest(AuthRequestDTO authRequest) {
-        if (authRequest == null) {
-            throw new BadRequestException("Request body is required");
+        // Check validation errors
+        if (result.hasErrors()) {
+            @SuppressWarnings("null")
+            String errorMessage = result.getFieldError() != null ? result.getFieldError().getDefaultMessage() : "Validation failed";
+            return ResponseEntity.badRequest()
+                    .body(ResponseBuilder.error(errorMessage, "BAD_REQUEST"));
         }
         
-        if (!isValidField(authRequest.getEmail())) {
-            throw new BadRequestException("Email is required");
+        try {
+            // Authenticate user - throws UnauthorizedException if invalid credentials (401)
+            UserEntity user = authService.authenticate(authRequest);
+            
+            // Generate JWT token
+            String token = jwtUtil.generateAccessToken(user);
+            
+            // Return Module 12 spec format
+            AuthResponseDTO response = AuthResponseDTO.builder()
+                    .success(true)
+                    .accessToken(token)
+                    .build();
+            
+            log.info("User authenticated successfully: {}", user.getEmail());
+            return ResponseEntity.ok(response);
+        } catch (UnauthorizedException e) {
+            log.warn("Authentication failed: {}", e.getMessage());
+            // Return Module 12 spec format for 401
+            AuthResponseDTO response = AuthResponseDTO.builder()
+                    .success(false)
+                    .accessToken(null)
+                    .build();
+            return ResponseEntity.status(401).body(response);
         }
-        
-        if (!isValidField(authRequest.getPassword())) {
-            throw new BadRequestException("Password is required");
-        }
-    }
-    
-    /**
-     * Checks if a field is valid (not null and not empty/whitespace).
-     * 
-     * @param field the field to validate
-     * @return true if valid, false otherwise
-     */
-    private boolean isValidField(String field) {
-        return field != null && !field.trim().isEmpty();
     }
 }

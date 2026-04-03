@@ -34,9 +34,9 @@ public class ProductOrder {
     private Order order;
 
     @Min(1)
-    private Integer product_quantity;
+    private Integer productQuantity;
     @Min(0)
-    private Integer product_unit_cost;
+    private Integer productUnitCost;
 
     @PrePersist
     private void validateBeforePersist() {

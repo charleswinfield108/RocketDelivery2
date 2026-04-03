@@ -124,23 +124,23 @@ public class OrderService {
     @Transactional
     public ApiOrderDTO createOrder(ApiCreateOrderRequestDTO request) {
         logger.debug("OrderService.createOrder() - customer_id: {}, restaurant_id: {}, products size: {}",
-                request.getCustomer_id(), request.getRestaurant_id(), 
+                request.getCustomerId(), request.getRestaurantId(), 
                 request.getProducts() != null ? request.getProducts().size() : 0);
         
         // Validate request
         validateCreateOrderRequest(request);
         
         // Fetch entities
-        Customer customer = customerRepository.findById(request.getCustomer_id())
+        Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> {
-                    logger.warn("OrderService.createOrder() - Customer not found: {}", request.getCustomer_id());
-                    return new ResourceNotFoundException("Customer with ID " + request.getCustomer_id() + " not found");
+                    logger.warn("OrderService.createOrder() - Customer not found: {}", request.getCustomerId());
+                    return new ResourceNotFoundException("Customer with ID " + request.getCustomerId() + " not found");
                 });
         
-        Restaurant restaurant = restaurantRepository.findById(request.getRestaurant_id())
+        Restaurant restaurant = restaurantRepository.findById(request.getRestaurantId())
                 .orElseThrow(() -> {
-                    logger.warn("OrderService.createOrder() - Restaurant not found: {}", request.getRestaurant_id());
-                    return new ResourceNotFoundException("Restaurant with ID " + request.getRestaurant_id() + " not found");
+                    logger.warn("OrderService.createOrder() - Restaurant not found: {}", request.getRestaurantId());
+                    return new ResourceNotFoundException("Restaurant with ID " + request.getRestaurantId() + " not found");
                 });
         
         // Get PENDING status (should exist from seeding)
@@ -158,10 +158,10 @@ public class OrderService {
         List<ProductOrder> productOrders = new ArrayList<>();
         
         for (ApiProductItemDTO productItem : request.getProducts()) {
-            Product product = productRepository.findById(productItem.getProduct_id())
+            Product product = productRepository.findById(productItem.getId())
                     .orElseThrow(() -> {
-                        logger.warn("OrderService.createOrder() - Product not found: {}", productItem.getProduct_id());
-                        return new ResourceNotFoundException("Product with ID " + productItem.getProduct_id() + " not found");
+                        logger.warn("OrderService.createOrder() - Product not found: {}", productItem.getId());
+                        return new ResourceNotFoundException("Product with ID " + productItem.getId() + " not found");
                     });
             
             // Verify product belongs to the restaurant
@@ -172,31 +172,31 @@ public class OrderService {
                         "Product with ID " + product.getId() + " does not belong to restaurant " + restaurant.getId());
             }
             
-            int quantity = productItem.getProduct_quantity();
+            int quantity = productItem.getQuantity();
             calculatedTotal += (long) product.getCost() * quantity;
             
             ProductOrder productOrder = ProductOrder.builder()
                     .product(product)
-                    .product_quantity(quantity)
-                    .product_unit_cost(product.getCost())
+                    .productQuantity(quantity)
+                    .productUnitCost(product.getCost())
                     .build();
             productOrders.add(productOrder);
         }
         
         // Validate total price
-        if (calculatedTotal != request.getTotal_cost()) {
+        if (calculatedTotal != request.getTotalCost()) {
             logger.warn("OrderService.createOrder() - Price mismatch. Expected: {}, Got: {}", 
-                    calculatedTotal, request.getTotal_cost());
+                    calculatedTotal, request.getTotalCost());
             throw new IllegalArgumentException(
-                    "Total price " + request.getTotal_cost() + " does not match products total " + calculatedTotal);
+                    "Total price " + request.getTotalCost() + " does not match products total " + calculatedTotal);
         }
         
         // Create and save order
         Order order = Order.builder()
                 .customer(customer)
                 .restaurant(restaurant)
-                .order_status(pendingStatus)
-                .restaurant_rating(1) // Default rating (minimum valid value)
+                .orderStatus(pendingStatus)
+                .restaurantRating(1) // Default rating (minimum valid value)
                 .build();
         
         order = orderRepository.save(order);
@@ -256,7 +256,7 @@ public class OrderService {
                 });
         
         // Update the order status
-        order.setOrder_status(orderStatus);
+        order.setOrderStatus(orderStatus);
         orderRepository.save(order);
         logger.info("OrderService.updateOrderStatus() - Order status updated: id={}, status={}", orderId, statusValue);
     }
@@ -270,10 +270,10 @@ public class OrderService {
      * @throws IllegalArgumentException if validation fails
      */
     private void validateCreateOrderRequest(ApiCreateOrderRequestDTO request) {
-        if (request.getCustomer_id() <= 0) {
+        if (request.getCustomerId() <= 0) {
             throw new IllegalArgumentException("Invalid customer ID: must be positive");
         }
-        if (request.getRestaurant_id() <= 0) {
+        if (request.getRestaurantId() <= 0) {
             throw new IllegalArgumentException("Invalid restaurant ID: must be positive");
         }
         if (request.getProducts() == null) {
@@ -282,16 +282,16 @@ public class OrderService {
         if (request.getProducts().isEmpty()) {
             throw new IllegalArgumentException("Products array cannot be empty");
         }
-        if (request.getTotal_cost() <= 0) {
+        if (request.getTotalCost() <= 0) {
             throw new IllegalArgumentException("Total cost must be positive");
         }
         
         // Validate each product item
         for (ApiProductItemDTO item : request.getProducts()) {
-            if (item.getProduct_id() <= 0) {
+            if (item.getId() <= 0) {
                 throw new IllegalArgumentException("Invalid product ID: must be positive");
             }
-            if (item.getProduct_quantity() <= 0) {
+            if (item.getQuantity() <= 0) {
                 throw new IllegalArgumentException("Product quantity must be positive");
             }
         }
@@ -350,7 +350,7 @@ public class OrderService {
     
     /**
      * Converts Order JPA entity to ApiOrderDTO for API responses.
-     * Maps relevant fields and handles null references safely.
+     * Maps relevant fields including customer, restaurant, and courier details.
      * 
      * @param order the Order entity
      * @return ApiOrderDTO with mapped values
@@ -358,13 +358,51 @@ public class OrderService {
     private ApiOrderDTO convertToApiOrderDTO(Order order) {
         ApiOrderDTO dto = new ApiOrderDTO();
         dto.setId(order.getId());
-        dto.setCustomer_id(order.getCustomer() != null ? order.getCustomer().getId() : 0);
-        dto.setRestaurant_id(order.getRestaurant() != null ? order.getRestaurant().getId() : 0);
-        if (order.getOrder_status() != null) {
-            dto.setStatus(order.getOrder_status().getName());
+        
+        // Customer details
+        if (order.getCustomer() != null) {
+            dto.setCustomerId(order.getCustomer().getId());
+            dto.setCustomerName(order.getCustomer().getUserEntity() != null ? order.getCustomer().getUserEntity().getName() : "");
+            dto.setCustomerAddress(order.getCustomer().getAddress() != null ? 
+                    order.getCustomer().getAddress().getStreetAddress() + ", " + 
+                    order.getCustomer().getAddress().getCity() + ", " + 
+                    order.getCustomer().getAddress().getPostalCode() : "");
+        } else {
+            dto.setCustomerId(0);
+            dto.setCustomerName("");
+            dto.setCustomerAddress("");
+        }
+        
+        // Restaurant details
+        if (order.getRestaurant() != null) {
+            dto.setRestaurantId(order.getRestaurant().getId());
+            dto.setRestaurantName(order.getRestaurant().getName());
+            dto.setRestaurantAddress(order.getRestaurant().getAddress() != null ? 
+                    order.getRestaurant().getAddress().getStreetAddress() + ", " + 
+                    order.getRestaurant().getAddress().getCity() + ", " + 
+                    order.getRestaurant().getAddress().getPostalCode() : "");
+        } else {
+            dto.setRestaurantId(0);
+            dto.setRestaurantName("");
+            dto.setRestaurantAddress("");
+        }
+        
+        // Courier details
+        if (order.getCourier() != null) {
+            dto.setCourierId(order.getCourier().getId());
+            dto.setCourierName(order.getCourier().getUserEntity() != null ? order.getCourier().getUserEntity().getName() : "");
+        } else {
+            dto.setCourierId(0);
+            dto.setCourierName("");
+        }
+        
+        // Order status
+        if (order.getOrderStatus() != null) {
+            dto.setStatus(order.getOrderStatus().getName());
         } else {
             dto.setStatus("");
         }
+        
         return dto;
     }
 
@@ -385,16 +423,17 @@ public class OrderService {
         
         for (ProductOrder po : productOrders) {
             ApiProductForOrderApiDTO productDto = new ApiProductForOrderApiDTO();
-            productDto.setProduct_name(po.getProduct().getName());
-            productDto.setUnit_cost(po.getProduct_unit_cost());
-            productDto.setQuantity(po.getProduct_quantity());
-            productDto.setTotal_cost((int) ((long) po.getProduct_unit_cost() * po.getProduct_quantity()));
+            productDto.setProductId(po.getProduct().getId());
+            productDto.setProductName(po.getProduct().getName());
+            productDto.setUnitCost(po.getProductUnitCost());
+            productDto.setQuantity(po.getProductQuantity());
+            productDto.setTotalCost((int) ((long) po.getProductUnitCost() * po.getProductQuantity()));
             products.add(productDto);
-            totalCost += (long) po.getProduct_unit_cost() * po.getProduct_quantity();
+            totalCost += (long) po.getProductUnitCost() * po.getProductQuantity();
         }
         
         dto.setProducts(products);
-        dto.setTotal_cost(totalCost);
+        dto.setTotalCost(totalCost);
         return dto;
     }
 }
